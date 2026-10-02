@@ -1,81 +1,142 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
   <title>DAGITOPUP 🇪🇹</title>
+
   <link rel="stylesheet" href="/style.css">
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
+
 <body>
-  <div class="glow glow1"></div><div class="glow glow2"></div>
-  <main class="app">
-    <header class="hero">
-      <div class="logo">D</div>
-      <div>
-        <div class="brand">DAGITOPUP 🇪🇹</div>
-        <div class="tag">FREE FIRE TOP UP</div>
+
+  <!-- Animated background -->
+  <div class="background">
+    <div class="stars"></div>
+    <div class="orb orb-blue"></div>
+    <div class="orb orb-purple"></div>
+    <div class="orb orb-gold"></div>
+  </div>
+
+  <main class="welcome">
+
+    <!-- Logo -->
+    <div class="logo-wrap">
+      <div class="logo-ring"></div>
+
+      <div class="logo">
+        <span>D</span>
       </div>
-      <button id="openTelegram" class="small-btn">⚡ TELEGRAM</button>
-    </header>
+    </div>
 
-    <section class="hero-card">
-      <span class="pill">FAST • SAFE • EASY</span>
-      <h1>Top Up Your Free Fire Account</h1>
-      <p>Diamonds, Membership, Level Up and Booyah Pass.</p>
-      <p class="manual">📦 Manual order fulfillment • 💰 Telebirr</p>
+    <!-- Brand -->
+    <div class="brand">
+      <h1>DAGITOPUP <span>🇪🇹</span></h1>
+      <div class="subtitle">FREE FIRE TOP UP</div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+
+      <div class="badge">
+        ⚡ FAST • SAFE • EASY
+      </div>
+
+      <h2>
+        Power Up Your<br>
+        <span>Free Fire</span> Account
+      </h2>
+
+      <p>
+        Diamonds, Membership, Level Up<br>
+        and Booyah Pass — all in one place.
+      </p>
+
+      <div class="features">
+        <div class="feature">
+          <div>💎</div>
+          <span>Diamonds</span>
+        </div>
+
+        <div class="feature">
+          <div>🎫</div>
+          <span>Membership</span>
+        </div>
+
+        <div class="feature">
+          <div>⚡</div>
+          <span>Fast Order</span>
+        </div>
+      </div>
+
+      <!-- Start button -->
+      <button id="startBtn" class="start-btn">
+        <span>START TOP UP</span>
+        <strong>→</strong>
+      </button>
+
+      <div class="manual">
+        📦 Manual fulfillment • 🇪🇹 Ethiopian Birr
+      </div>
+
     </section>
 
-    <section>
-      <div class="section-title">💎 Diamonds</div>
-      <div id="diamonds" class="grid"></div>
-    </section>
+    <!-- Bottom information -->
+    <div class="trust">
 
-    <section>
-      <div class="section-title">🎫 Membership</div>
-      <div id="membership" class="grid"></div>
-    </section>
+      <div>
+        <strong>💰</strong>
+        <span>Telebirr</span>
+      </div>
 
-    <section>
-      <div class="section-title">📈 Level Up</div>
-      <div id="levelup" class="grid"></div>
-    </section>
+      <div>
+        <strong>🛒</strong>
+        <span>Easy Ordering</span>
+      </div>
 
-    <section>
-      <div class="section-title">🎟️ Booyah Pass</div>
-      <div id="booyah" class="grid"></div>
-    </section>
+      <div>
+        <strong>📦</strong>
+        <span>Order Tracking</span>
+      </div>
 
-    <section class="payment-card">
-      <div class="section-title">💰 Payment</div>
-      <div class="pay-row"><span>📱 Method</span><strong>Telebirr</strong></div>
-      <div class="pay-row"><span>👤 Account</span><strong>Abebaw Adamu</strong></div>
-      <div class="pay-row"><span>☎️ Number</span><strong>0978454451</strong></div>
-      <div class="notice">Pay the exact amount first, then enter your Telebirr transaction/reference number when placing your order.</div>
-    </section>
+    </div>
 
-    <section id="order" class="order-card">
-      <div class="section-title">📦 Place Order</div>
-      <div id="chosen" class="chosen">Choose a product above.</div>
+    <footer>
+      DAGITOPUP 🇪🇹
+    </footer>
 
-      <label>🎮 Free Fire UID</label>
-      <input id="uid" inputmode="numeric" placeholder="Enter your Free Fire UID">
-
-      <label>💳 Telebirr Transaction / Reference Number</label>
-      <input id="ref" autocomplete="off" placeholder="Enter your payment reference">
-
-      <button id="submit" class="primary">SUBMIT ORDER</button>
-      <button id="cancel" class="secondary">CANCEL</button>
-      <div id="out" class="output"></div>
-    </section>
-
-    <section class="orders-card">
-      <div class="section-title">📦 My Orders</div>
-      <button id="loadOrders" class="secondary">VIEW MY ORDERS</button>
-      <div id="myOrders" class="orders-list"></div>
-    </section>
-
-    <footer>DAGITOPUP 🇪🇹 • Manual order fulfillment</footer>
   </main>
-  <script src="/script.js"></script>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+
+      document.body.classList.add("leaving");
+
+      setTimeout(() => {
+
+        /*
+          STEP 2 will be connected here.
+          For now this shows a temporary message.
+        */
+
+        alert("🔥 Welcome to DAGITOPUP! STEP 2 is coming next.");
+
+        document.body.classList.remove("leaving");
+
+      }, 350);
+
+    });
+  </script>
+
 </body>
 </html>
