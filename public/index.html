@@ -1,1 +1,81 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DAGITOPUP 🇪🇹</title><link rel="stylesheet" href="style.css"></head><body><header><div class="brand"><div class="logo">D</div><div><b>DAGITOPUP</b><small>FREE FIRE TOP UP 🇪🇹</small></div></div><button id="tg">OPEN TELEGRAM</button></header><main><section class="hero"><strong>⚡ FAST • SAFE • EASY</strong><h1>Top Up Your Free Fire Account</h1><p>Diamonds, Membership, Level Up and Booyah Pass.</p></section><section><h2>💎 Diamonds</h2><div class="grid" id="diamonds"></div></section><section><h2>🎫 Membership</h2><div class="grid"><button class="product" data-product="Weekly Membership"><span>🗓️ Weekly</span><b>PRICE TO BE SET</b></button><button class="product" data-product="Monthly Membership"><span>🗓️ Monthly</span><b>PRICE TO BE SET</b></button></div></section><section><h2>📈 Level Up</h2><div class="grid"><button class="product" data-product="Level Up"><span>📈 Level Up</span><b>PRICE TO BE SET</b></button></div></section><section><h2>🎟️ Booyah Pass</h2><div class="grid"><button class="product" data-product="Booyah Pass"><span>🎟️ Booyah Pass</span><b>PRICE TO BE SET</b></button></div></section><section><h2>💰 Payment</h2><div class="pay">📱 <b>Telebirr</b><br>👤 Abebaw Adamu<br>☎️ <b>0978454451</b><hr><small>Pay first, then enter your transaction/reference number.</small></div></section><section id="order" class="order hidden"><h2>📦 Place Order</h2><div id="selected"></div><label>🎮 Free Fire UID</label><input id="uid" inputmode="numeric" placeholder="Enter your Free Fire UID"><label>💳 Telebirr Transaction / Reference Number</label><input id="ref" placeholder="Enter your payment reference"><button id="submit">SUBMIT ORDER</button><button id="cancel">CANCEL</button><p id="result"></p></section></main><footer>DAGITOPUP 🇪🇹 • Manual order fulfillment</footer><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="script.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>DAGITOPUP 🇪🇹</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="glow glow1"></div><div class="glow glow2"></div>
+  <main class="app">
+    <header class="hero">
+      <div class="logo">D</div>
+      <div>
+        <div class="brand">DAGITOPUP 🇪🇹</div>
+        <div class="tag">FREE FIRE TOP UP</div>
+      </div>
+      <button id="openTelegram" class="small-btn">⚡ TELEGRAM</button>
+    </header>
+
+    <section class="hero-card">
+      <span class="pill">FAST • SAFE • EASY</span>
+      <h1>Top Up Your Free Fire Account</h1>
+      <p>Diamonds, Membership, Level Up and Booyah Pass.</p>
+      <p class="manual">📦 Manual order fulfillment • 💰 Telebirr</p>
+    </section>
+
+    <section>
+      <div class="section-title">💎 Diamonds</div>
+      <div id="diamonds" class="grid"></div>
+    </section>
+
+    <section>
+      <div class="section-title">🎫 Membership</div>
+      <div id="membership" class="grid"></div>
+    </section>
+
+    <section>
+      <div class="section-title">📈 Level Up</div>
+      <div id="levelup" class="grid"></div>
+    </section>
+
+    <section>
+      <div class="section-title">🎟️ Booyah Pass</div>
+      <div id="booyah" class="grid"></div>
+    </section>
+
+    <section class="payment-card">
+      <div class="section-title">💰 Payment</div>
+      <div class="pay-row"><span>📱 Method</span><strong>Telebirr</strong></div>
+      <div class="pay-row"><span>👤 Account</span><strong>Abebaw Adamu</strong></div>
+      <div class="pay-row"><span>☎️ Number</span><strong>0978454451</strong></div>
+      <div class="notice">Pay the exact amount first, then enter your Telebirr transaction/reference number when placing your order.</div>
+    </section>
+
+    <section id="order" class="order-card">
+      <div class="section-title">📦 Place Order</div>
+      <div id="chosen" class="chosen">Choose a product above.</div>
+
+      <label>🎮 Free Fire UID</label>
+      <input id="uid" inputmode="numeric" placeholder="Enter your Free Fire UID">
+
+      <label>💳 Telebirr Transaction / Reference Number</label>
+      <input id="ref" autocomplete="off" placeholder="Enter your payment reference">
+
+      <button id="submit" class="primary">SUBMIT ORDER</button>
+      <button id="cancel" class="secondary">CANCEL</button>
+      <div id="out" class="output"></div>
+    </section>
+
+    <section class="orders-card">
+      <div class="section-title">📦 My Orders</div>
+      <button id="loadOrders" class="secondary">VIEW MY ORDERS</button>
+      <div id="myOrders" class="orders-list"></div>
+    </section>
+
+    <footer>DAGITOPUP 🇪🇹 • Manual order fulfillment</footer>
+  </main>
+  <script src="/script.js"></script>
+</body>
+</html>
