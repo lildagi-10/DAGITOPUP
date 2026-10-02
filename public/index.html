@@ -3,7 +3,10 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
 
   <title>DAGITOPUP 🇪🇹</title>
 
@@ -14,9 +17,9 @@
 
 <body>
 
-  <!-- ========================= -->
+  <!-- ============================= -->
   <!-- BACKGROUND -->
-  <!-- ========================= -->
+  <!-- ============================= -->
 
   <div class="background">
     <div class="stars"></div>
@@ -30,13 +33,14 @@
   <main class="app">
 
 
-    <!-- ========================= -->
+    <!-- ============================= -->
     <!-- STEP 1 — WELCOME -->
-    <!-- ========================= -->
+    <!-- ============================= -->
 
-    <section id="welcomeScreen" class="screen active">
-
-      <!-- Logo -->
+    <section
+      id="welcomeScreen"
+      class="screen active"
+    >
 
       <div class="logo-wrap">
 
@@ -49,12 +53,10 @@
       </div>
 
 
-      <!-- Brand -->
-
       <div class="brand">
 
         <h1>
-          DAGITOPUP <span>🇪🇹</span>
+          DAGITOPUP 🇪🇹
         </h1>
 
         <div class="subtitle">
@@ -63,8 +65,6 @@
 
       </div>
 
-
-      <!-- Hero -->
 
       <section class="hero">
 
@@ -85,8 +85,6 @@
         </p>
 
 
-        <!-- Features -->
-
         <div class="features">
 
           <div class="feature">
@@ -106,8 +104,6 @@
 
         </div>
 
-
-        <!-- Start -->
 
         <button
           id="startBtn"
@@ -132,8 +128,6 @@
 
       </section>
 
-
-      <!-- Trust -->
 
       <div class="trust">
 
@@ -163,18 +157,14 @@
 
 
 
-    <!-- ========================= -->
-    <!-- STEP 2 — SERVICES -->
-    <!-- ========================= -->
+    <!-- ============================= -->
+    <!-- STEP 2 — CHOOSE SERVICE -->
+    <!-- ============================= -->
 
     <section
       id="serviceScreen"
       class="screen"
-      style="display: none;"
     >
-
-
-      <!-- Top -->
 
       <div class="top-bar">
 
@@ -202,9 +192,6 @@
       </div>
 
 
-
-      <!-- Header -->
-
       <div class="service-header">
 
         <div class="small-badge">
@@ -219,19 +206,14 @@
 
 
         <p>
-          Select what you want to purchase.
+          What would you like to purchase?
         </p>
 
       </div>
 
 
-
-      <!-- Services -->
-
       <div class="services">
 
-
-        <!-- Diamonds -->
 
         <button
           class="service-card"
@@ -251,7 +233,7 @@
             </h3>
 
             <p>
-              Top up diamonds to your account
+              Diamonds for your Free Fire account
             </p>
 
           </div>
@@ -264,8 +246,6 @@
         </button>
 
 
-
-        <!-- Membership -->
 
         <button
           class="service-card"
@@ -299,8 +279,6 @@
 
 
 
-        <!-- Level Up -->
-
         <button
           class="service-card"
           data-service="levelup"
@@ -332,8 +310,6 @@
         </button>
 
 
-
-        <!-- Booyah -->
 
         <button
           class="service-card"
@@ -369,7 +345,482 @@
 
 
       <div class="service-footer">
-        🇪🇹 Prices are displayed in Ethiopian Birr
+        🇪🇹 All prices are in Ethiopian Birr
+      </div>
+
+    </section>
+
+
+
+    <!-- ============================= -->
+    <!-- STEP 3 — PACKAGES -->
+    <!-- ============================= -->
+
+    <section
+      id="packageScreen"
+      class="screen"
+    >
+
+      <div class="top-bar">
+
+        <button
+          id="backService"
+          class="back-btn"
+          type="button"
+        >
+          ←
+        </button>
+
+
+        <div>
+
+          <div class="top-title">
+            DAGITOPUP 🇪🇹
+          </div>
+
+          <div class="top-subtitle">
+            CHOOSE PACKAGE
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="service-header">
+
+        <div
+          id="packageBadge"
+          class="small-badge"
+        >
+          💎 STEP 3
+        </div>
+
+
+        <h2 id="packageTitle">
+          Choose Your<br>
+          <span>Package</span>
+        </h2>
+
+
+        <p id="packageSubtitle">
+          Select the package you want.
+        </p>
+
+      </div>
+
+
+      <div
+        id="packageList"
+        class="package-list"
+      >
+      </div>
+
+    </section>
+
+
+
+    <!-- ============================= -->
+    <!-- STEP 4 — FREE FIRE UID -->
+    <!-- ============================= -->
+
+    <section
+      id="uidScreen"
+      class="screen"
+    >
+
+      <div class="top-bar">
+
+        <button
+          id="backPackage"
+          class="back-btn"
+          type="button"
+        >
+          ←
+        </button>
+
+
+        <div>
+
+          <div class="top-title">
+            DAGITOPUP 🇪🇹
+          </div>
+
+          <div class="top-subtitle">
+            ACCOUNT DETAILS
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="form-card">
+
+        <div class="small-badge">
+          🎮 STEP 4
+        </div>
+
+
+        <h2>
+          Enter Your<br>
+          <span>Free Fire UID</span>
+        </h2>
+
+
+        <p class="muted">
+          Enter the Free Fire UID that should receive
+          your order.
+        </p>
+
+
+        <label for="uid">
+          Free Fire UID
+        </label>
+
+
+        <input
+          id="uid"
+          type="text"
+          inputmode="numeric"
+          maxlength="20"
+          placeholder="Example: 1234567890"
+        >
+
+
+        <label for="nickname">
+          Account Name
+          <small>(optional)</small>
+        </label>
+
+
+        <input
+          id="nickname"
+          type="text"
+          maxlength="40"
+          placeholder="Your Free Fire name"
+        >
+
+
+        <div class="notice">
+
+          ℹ️ Please double-check your UID before
+          continuing.
+
+          <br><br>
+
+          We don't automatically retrieve Free Fire
+          account names at this stage.
+
+        </div>
+
+
+        <div
+          id="selectedSummary"
+          class="selected-summary"
+        >
+        </div>
+
+
+        <button
+          id="continuePayment"
+          class="primary-btn"
+          type="button"
+        >
+          CONTINUE TO PAYMENT →
+        </button>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ============================= -->
+    <!-- STEP 5 — PAYMENT -->
+    <!-- ============================= -->
+
+    <section
+      id="paymentScreen"
+      class="screen"
+    >
+
+      <div class="top-bar">
+
+        <button
+          id="backUid"
+          class="back-btn"
+          type="button"
+        >
+          ←
+        </button>
+
+
+        <div>
+
+          <div class="top-title">
+            DAGITOPUP 🇪🇹
+          </div>
+
+          <div class="top-subtitle">
+            PAYMENT
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="form-card">
+
+        <div class="small-badge">
+          💰 STEP 5
+        </div>
+
+
+        <h2>
+          Make Your<br>
+          <span>Payment</span>
+        </h2>
+
+
+        <div class="payment-box">
+
+          <div class="payment-row">
+
+            <span>
+              Payment Method
+            </span>
+
+            <strong>
+              📱 Telebirr
+            </strong>
+
+          </div>
+
+
+          <div class="payment-row">
+
+            <span>
+              Account Name
+            </span>
+
+            <strong>
+              Abebaw Adamu
+            </strong>
+
+          </div>
+
+
+          <div class="payment-row">
+
+            <span>
+              Telebirr Number
+            </span>
+
+            <strong>
+              0978454451
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <div
+          id="paymentSummary"
+          class="selected-summary"
+        >
+        </div>
+
+
+        <div class="notice">
+
+          <strong>
+            How to pay:
+          </strong>
+
+          <br><br>
+
+          1️⃣ Send the exact amount using Telebirr.
+
+          <br>
+
+          2️⃣ Keep your transaction/reference number.
+
+          <br>
+
+          3️⃣ Enter the reference number below.
+
+          <br>
+
+          4️⃣ Submit your order.
+
+        </div>
+
+
+        <label for="paymentRef">
+          Telebirr Transaction / Reference Number
+        </label>
+
+
+        <input
+          id="paymentRef"
+          type="text"
+          maxlength="60"
+          placeholder="Enter transaction reference"
+        >
+
+
+        <button
+          id="submitOrder"
+          class="primary-btn"
+          type="button"
+        >
+          SUBMIT ORDER 🚀
+        </button>
+
+
+        <div
+          id="orderOutput"
+          class="output"
+        >
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ============================= -->
+    <!-- STEP 6 — SUCCESS -->
+    <!-- ============================= -->
+
+    <section
+      id="successScreen"
+      class="screen"
+    >
+
+      <div class="success-card">
+
+        <div class="success-icon">
+          ✓
+        </div>
+
+
+        <div class="small-badge">
+          🎉 ORDER RECEIVED
+        </div>
+
+
+        <h2>
+          Your Order Is<br>
+          <span>Submitted!</span>
+        </h2>
+
+
+        <div
+          id="successDetails"
+          class="success-details"
+        >
+        </div>
+
+
+        <div class="notice">
+
+          Your payment will be reviewed and your
+          order will be manually fulfilled.
+
+          <br><br>
+
+          Keep your Order ID for support.
+
+        </div>
+
+
+        <button
+          id="viewOrders"
+          class="primary-btn"
+          type="button"
+        >
+          📦 MY ORDERS
+        </button>
+
+
+        <button
+          id="newOrder"
+          class="secondary-btn"
+          type="button"
+        >
+          🛒 NEW ORDER
+        </button>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ============================= -->
+    <!-- ORDER TRACKING -->
+    <!-- ============================= -->
+
+    <section
+      id="ordersScreen"
+      class="screen"
+    >
+
+      <div class="top-bar">
+
+        <button
+          id="backSuccess"
+          class="back-btn"
+          type="button"
+        >
+          ←
+        </button>
+
+
+        <div>
+
+          <div class="top-title">
+            DAGITOPUP 🇪🇹
+          </div>
+
+          <div class="top-subtitle">
+            ORDER TRACKING
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="service-header">
+
+        <div class="small-badge">
+          📦 MY ORDERS
+        </div>
+
+
+        <h2>
+          My<br>
+          <span>Orders</span>
+        </h2>
+
+
+        <p>
+          Track your submitted DAGITOPUP orders.
+        </p>
+
+      </div>
+
+
+      <div
+        id="myOrders"
+        class="orders-list"
+      >
       </div>
 
     </section>
@@ -377,107 +828,11 @@
   </main>
 
 
-
-  <!-- ========================= -->
+  <!-- ============================= -->
   <!-- JAVASCRIPT -->
-  <!-- ========================= -->
+  <!-- ============================= -->
 
-  <script>
-
-    const tg = window.Telegram?.WebApp;
-
-
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
-
-
-
-    const welcomeScreen =
-      document.getElementById("welcomeScreen");
-
-
-    const serviceScreen =
-      document.getElementById("serviceScreen");
-
-
-    const startBtn =
-      document.getElementById("startBtn");
-
-
-    const backHome =
-      document.getElementById("backHome");
-
-
-
-    /*
-      START TOP UP
-    */
-
-    startBtn.addEventListener("click", function () {
-
-      welcomeScreen.style.display = "none";
-
-      serviceScreen.style.display = "block";
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-
-    });
-
-
-
-    /*
-      BACK BUTTON
-    */
-
-    backHome.addEventListener("click", function () {
-
-      serviceScreen.style.display = "none";
-
-      welcomeScreen.style.display = "block";
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-
-    });
-
-
-
-    /*
-      SERVICE BUTTONS
-
-      STEP 3 will connect these
-      to the package screen.
-    */
-
-    const serviceButtons =
-      document.querySelectorAll(".service-card");
-
-
-    serviceButtons.forEach(function (button) {
-
-      button.addEventListener("click", function () {
-
-        const service =
-          button.dataset.service;
-
-        console.log(
-          "Selected service:",
-          service
-        );
-
-      });
-
-    });
-
-  </script>
+  <script src="/script.js"></script>
 
 </body>
-
 </html>
