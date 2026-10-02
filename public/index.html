@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -13,147 +14,470 @@
 
 <body>
 
-  <!-- Animated background -->
+  <!-- ========================= -->
+  <!-- BACKGROUND -->
+  <!-- ========================= -->
+
   <div class="background">
     <div class="stars"></div>
+
     <div class="orb orb-blue"></div>
     <div class="orb orb-purple"></div>
     <div class="orb orb-gold"></div>
   </div>
 
-  <main class="welcome">
 
-    <!-- Logo -->
-    <div class="logo-wrap">
-      <div class="logo-ring"></div>
+  <main class="app">
 
-      <div class="logo">
-        <span>D</span>
-      </div>
-    </div>
 
-    <!-- Brand -->
-    <div class="brand">
-      <h1>DAGITOPUP <span>🇪🇹</span></h1>
-      <div class="subtitle">FREE FIRE TOP UP</div>
-    </div>
+    <!-- ========================= -->
+    <!-- STEP 1 — WELCOME -->
+    <!-- ========================= -->
 
-    <!-- Hero -->
-    <section class="hero">
+    <section id="welcomeScreen" class="screen active">
 
-      <div class="badge">
-        ⚡ FAST • SAFE • EASY
-      </div>
+      <!-- Logo -->
 
-      <h2>
-        Power Up Your<br>
-        <span>Free Fire</span> Account
-      </h2>
+      <div class="logo-wrap">
 
-      <p>
-        Diamonds, Membership, Level Up<br>
-        and Booyah Pass — all in one place.
-      </p>
+        <div class="logo-ring"></div>
 
-      <div class="features">
-        <div class="feature">
-          <div>💎</div>
-          <span>Diamonds</span>
+        <div class="logo">
+          <span>D</span>
         </div>
 
-        <div class="feature">
-          <div>🎫</div>
-          <span>Membership</span>
-        </div>
-
-        <div class="feature">
-          <div>⚡</div>
-          <span>Fast Order</span>
-        </div>
       </div>
 
-      <!-- Start button -->
-      <button id="startBtn" class="start-btn">
-        <span>START TOP UP</span>
-        <strong>→</strong>
-      </button>
 
-      <div class="manual">
-        📦 Manual fulfillment • 🇪🇹 Ethiopian Birr
+      <!-- Brand -->
+
+      <div class="brand">
+
+        <h1>
+          DAGITOPUP <span>🇪🇹</span>
+        </h1>
+
+        <div class="subtitle">
+          FREE FIRE TOP UP
+        </div>
+
+      </div>
+
+
+      <!-- Hero -->
+
+      <section class="hero">
+
+        <div class="badge">
+          ⚡ FAST • SAFE • EASY
+        </div>
+
+
+        <h2>
+          Power Up Your<br>
+          <span>Free Fire</span> Account
+        </h2>
+
+
+        <p>
+          Diamonds, Membership, Level Up<br>
+          and Booyah Pass — all in one place.
+        </p>
+
+
+        <!-- Features -->
+
+        <div class="features">
+
+          <div class="feature">
+            <div>💎</div>
+            <span>Diamonds</span>
+          </div>
+
+          <div class="feature">
+            <div>🎫</div>
+            <span>Membership</span>
+          </div>
+
+          <div class="feature">
+            <div>⚡</div>
+            <span>Fast Order</span>
+          </div>
+
+        </div>
+
+
+        <!-- Start -->
+
+        <button
+          id="startBtn"
+          class="start-btn"
+          type="button"
+        >
+
+          <span>
+            START TOP UP
+          </span>
+
+          <strong>
+            →
+          </strong>
+
+        </button>
+
+
+        <div class="manual">
+          📦 Manual fulfillment • 🇪🇹 Ethiopian Birr
+        </div>
+
+      </section>
+
+
+      <!-- Trust -->
+
+      <div class="trust">
+
+        <div>
+          <strong>💰</strong>
+          <span>Telebirr</span>
+        </div>
+
+        <div>
+          <strong>🛒</strong>
+          <span>Easy Ordering</span>
+        </div>
+
+        <div>
+          <strong>📦</strong>
+          <span>Order Tracking</span>
+        </div>
+
+      </div>
+
+
+      <footer>
+        DAGITOPUP 🇪🇹
+      </footer>
+
+    </section>
+
+
+
+    <!-- ========================= -->
+    <!-- STEP 2 — SERVICES -->
+    <!-- ========================= -->
+
+    <section
+      id="serviceScreen"
+      class="screen"
+      style="display: none;"
+    >
+
+
+      <!-- Top -->
+
+      <div class="top-bar">
+
+        <button
+          id="backHome"
+          class="back-btn"
+          type="button"
+        >
+          ←
+        </button>
+
+
+        <div>
+
+          <div class="top-title">
+            DAGITOPUP 🇪🇹
+          </div>
+
+          <div class="top-subtitle">
+            FREE FIRE TOP UP
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Header -->
+
+      <div class="service-header">
+
+        <div class="small-badge">
+          🎮 STEP 2
+        </div>
+
+
+        <h2>
+          Choose Your<br>
+          <span>Service</span>
+        </h2>
+
+
+        <p>
+          Select what you want to purchase.
+        </p>
+
+      </div>
+
+
+
+      <!-- Services -->
+
+      <div class="services">
+
+
+        <!-- Diamonds -->
+
+        <button
+          class="service-card"
+          data-service="diamonds"
+          type="button"
+        >
+
+          <div class="service-icon diamond-icon">
+            💎
+          </div>
+
+
+          <div class="service-info">
+
+            <h3>
+              FF Diamonds
+            </h3>
+
+            <p>
+              Top up diamonds to your account
+            </p>
+
+          </div>
+
+
+          <div class="service-arrow">
+            →
+          </div>
+
+        </button>
+
+
+
+        <!-- Membership -->
+
+        <button
+          class="service-card"
+          data-service="membership"
+          type="button"
+        >
+
+          <div class="service-icon membership-icon">
+            🎫
+          </div>
+
+
+          <div class="service-info">
+
+            <h3>
+              Membership
+            </h3>
+
+            <p>
+              Weekly & Monthly membership
+            </p>
+
+          </div>
+
+
+          <div class="service-arrow">
+            →
+          </div>
+
+        </button>
+
+
+
+        <!-- Level Up -->
+
+        <button
+          class="service-card"
+          data-service="levelup"
+          type="button"
+        >
+
+          <div class="service-icon level-icon">
+            ⚡
+          </div>
+
+
+          <div class="service-info">
+
+            <h3>
+              Level Up
+            </h3>
+
+            <p>
+              Choose your level-up package
+            </p>
+
+          </div>
+
+
+          <div class="service-arrow">
+            →
+          </div>
+
+        </button>
+
+
+
+        <!-- Booyah -->
+
+        <button
+          class="service-card"
+          data-service="booyah"
+          type="button"
+        >
+
+          <div class="service-icon pass-icon">
+            🎟️
+          </div>
+
+
+          <div class="service-info">
+
+            <h3>
+              Booyah Pass
+            </h3>
+
+            <p>
+              Get your Free Fire Booyah Pass
+            </p>
+
+          </div>
+
+
+          <div class="service-arrow">
+            →
+          </div>
+
+        </button>
+
+      </div>
+
+
+      <div class="service-footer">
+        🇪🇹 Prices are displayed in Ethiopian Birr
       </div>
 
     </section>
 
-    <!-- Bottom information -->
-    <div class="trust">
-
-      <div>
-        <strong>💰</strong>
-        <span>Telebirr</span>
-      </div>
-
-      <div>
-        <strong>🛒</strong>
-        <span>Easy Ordering</span>
-      </div>
-
-      <div>
-        <strong>📦</strong>
-        <span>Order Tracking</span>
-      </div>
-
-    </div>
-
-    <footer>
-      DAGITOPUP 🇪🇹
-    </footer>
-
   </main>
 
+
+
+  <!-- ========================= -->
+  <!-- JAVASCRIPT -->
+  <!-- ========================= -->
+
   <script>
+
     const tg = window.Telegram?.WebApp;
+
 
     if (tg) {
       tg.ready();
       tg.expand();
     }
 
-    document.getElementById("startBtn").addEventListener("click", () => {
-  document.getElementById("welcomeScreen").style.display = "none";
-  document.getElementById("serviceScreen").style.display = "block";
-});
 
-      document.body.classList.add("leaving");
 
-      setTimeout(() => {
+    const welcomeScreen =
+      document.getElementById("welcomeScreen");
 
-        /*
-          STEP 2 will be connected here.
-          For now this shows a temporary message.
-        */
 
-        alert("🔥 Welcome to DAGITOPUP! STEP 2 is coming next.");
+    const serviceScreen =
+      document.getElementById("serviceScreen");
 
-        document.body.classList.remove("leaving");
 
-      }, 350);
+    const startBtn =
+      document.getElementById("startBtn");
+
+
+    const backHome =
+      document.getElementById("backHome");
+
+
+
+    /*
+      START TOP UP
+    */
+
+    startBtn.addEventListener("click", function () {
+
+      welcomeScreen.style.display = "none";
+
+      serviceScreen.style.display = "block";
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
 
     });
+
+
+
+    /*
+      BACK BUTTON
+    */
+
+    backHome.addEventListener("click", function () {
+
+      serviceScreen.style.display = "none";
+
+      welcomeScreen.style.display = "block";
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+    });
+
+
+
+    /*
+      SERVICE BUTTONS
+
+      STEP 3 will connect these
+      to the package screen.
+    */
+
+    const serviceButtons =
+      document.querySelectorAll(".service-card");
+
+
+    serviceButtons.forEach(function (button) {
+
+      button.addEventListener("click", function () {
+
+        const service =
+          button.dataset.service;
+
+        console.log(
+          "Selected service:",
+          service
+        );
+
+      });
+
+    });
+
   </script>
-<!-- STEP 2 -->
-<section id="serviceScreen" class="screen">
 
-  <h2>🎮 CHOOSE YOUR SERVICE</h2>
-
-  <button>💎 FF Diamonds</button>
-
-  <button>🎫 Membership</button>
-
-  <button>⚡ Level Up</button>
-
-  <button>🎟️ Booyah Pass</button>
-
-</section>
-  
 </body>
+
 </html>
