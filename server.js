@@ -30,103 +30,336 @@ app.use(express.static(path.join(__dirname, "public")));
 ========================= */
 
 /*
-  This endpoint checks a Free Fire UID
-  and returns the player's actual nickname,
-  region and level.
+  Free Fire lookup.
 
-  The external API is unofficial.
+  We try the player-info endpoint first.
+  If that fails, we try the checkbanned endpoint.
+
+  These are unofficial/community APIs and
+  can change or become unavailable.
 */
 
 app.get("/api/player/:uid", async (req, res) => {
-  const uid = String(req.params.uid || "").trim();
+
+  const uid =
+    String(req.params.uid || "").trim();
 
   /* ---------- UID VALIDATION ---------- */
 
   if (!/^\d{6,14}$/.test(uid)) {
+
     return res.status(400).json({
       success: false,
       error: "Invalid Free Fire UID."
     });
+
   }
 
-  try {
-    console.log(`🔍 Checking Free Fire UID: ${uid}`);
+  console.log(
+    `🔍 Checking Free Fire UID: ${uid}`
+  );
 
-    const response = await fetch(
-      `https://api2.nftoken.info/checkbanned?id=${encodeURIComponent(uid)}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json"
-        },
-        signal: AbortSignal.timeout(12000)
-      }
+  /* =====================================================
+     METHOD 1
+     PLAYER INFO API
+  ===================================================== */
+
+  try {
+
+    const url =
+      `https://api2.nftoken.info/get?uid=${encodeURIComponent(uid)}&region_group=GLOBAL`;
+
+    console.log(
+      "🌐 Trying player-info API..."
     );
 
-    if (!response.ok) {
-      console.error(
-        `Free Fire API returned HTTP ${response.status}`
+    const response =
+      await fetch(
+        url,
+        {
+          method: "GET",
+
+          headers: {
+            Accept:
+              "application/json",
+
+            "User-Agent":
+              "DAGITOPUP/1.0"
+          },
+
+          signal:
+            AbortSignal.timeout(15000)
+        }
       );
 
-      return res.status(502).json({
-        success: false,
-        error: "Free Fire lookup service is unavailable."
-      });
+    const text =
+      await response.text();
+
+    console.log(
+      `Player-info HTTP: ${response.status}`
+    );
+
+    console.log(
+      "Player-info raw response:",
+      text.slice(0, 2000)
+    );
+
+    if (response.ok) {
+
+      let data;
+
+      try {
+
+        data =
+          JSON.parse(text);
+
+      } catch (parseError) {
+
+        console.error(
+          "❌ Player-info returned invalid JSON."
+        );
+
+        data = null;
+      }
+
+      if (data) {
+
+        /*
+          Different versions of the API may
+          use slightly different field names.
+        */
+
+        const accountInfo =
+          data.AccountInfo ||
+          data.accountInfo ||
+          data.basicInfo ||
+          data.basicinfo ||
+          data.player ||
+          data;
+
+        const nickname =
+          accountInfo?.AccountName ||
+          accountInfo?.accountName ||
+          accountInfo?.nickname ||
+          accountInfo?.Nickname ||
+          data.nickname ||
+          data.PlayerNickname;
+
+        const playerRegion =
+          accountInfo?.AccountRegion ||
+          accountInfo?.accountRegion ||
+          accountInfo?.region ||
+          data.region ||
+          data.PlayerRegion;
+
+        const level =
+          accountInfo?.AccountLevel ??
+          accountInfo?.accountLevel ??
+          accountInfo?.level ??
+          data.level ??
+          data.PlayerLevel ??
+          null;
+
+        const playerId =
+          accountInfo?.accountId ||
+          accountInfo?.accountID ||
+          data.player_id ||
+          data.uid ||
+          uid;
+
+        const isBanned =
+          data.BanStatus?.isBanned ??
+          data.banStatus?.isBanned ??
+          data.is_banned ??
+          false;
+
+        if (nickname) {
+
+          console.log(
+            `✅ Player found: ${nickname}`
+          );
+
+          return res.json({
+
+            success: true,
+
+            uid:
+              String(playerId),
+
+            nickname:
+              String(nickname),
+
+            region:
+              String(
+                playerRegion ||
+                "Unknown"
+              ),
+
+            level,
+
+            isBanned:
+              Boolean(isBanned),
+
+            status:
+              isBanned
+                ? "BANNED"
+                : "NOT BANNED"
+
+          });
+
+        }
+
+      }
+
     }
-
-    const data = await response.json();
-
-    console.log("Free Fire lookup response:", data);
-
-    /* ---------- PLAYER NOT FOUND ---------- */
-
-    if (!data || !data.nickname) {
-      return res.status(404).json({
-        success: false,
-        error: "Free Fire player not found."
-      });
-    }
-
-    /* ---------- SUCCESS ---------- */
-
-    return res.json({
-      success: true,
-
-      uid:
-        data.player_id ||
-        uid,
-
-      nickname:
-        String(data.nickname),
-
-      region:
-        data.region ||
-        "Unknown",
-
-      level:
-        data.level ?? null,
-
-      isBanned:
-        Boolean(data.is_banned),
-
-      status:
-        data.status ||
-        "UNKNOWN"
-    });
 
   } catch (error) {
 
     console.error(
-      "❌ Free Fire lookup error:",
-      error
+      "⚠️ Player-info lookup failed:",
+      error.message
     );
 
-    return res.status(502).json({
-      success: false,
-      error:
-        "Could not check the Free Fire account right now."
-    });
   }
+
+  /* =====================================================
+     METHOD 2
+     CHECK BANNED API
+  ===================================================== */
+
+  try {
+
+    const url =
+      `https://api2.nftoken.info/checkbanned?id=${encodeURIComponent(uid)}`;
+
+    console.log(
+      "🌐 Trying checkbanned API..."
+    );
+
+    const response =
+      await fetch(
+        url,
+        {
+          method: "GET",
+
+          headers: {
+            Accept:
+              "application/json",
+
+            "User-Agent":
+              "DAGITOPUP/1.0"
+          },
+
+          signal:
+            AbortSignal.timeout(15000)
+        }
+      );
+
+    const text =
+      await response.text();
+
+    console.log(
+      `Checkbanned HTTP: ${response.status}`
+    );
+
+    console.log(
+      "Checkbanned raw response:",
+      text.slice(0, 2000)
+    );
+
+    if (response.ok) {
+
+      let data;
+
+      try {
+
+        data =
+          JSON.parse(text);
+
+      } catch (parseError) {
+
+        console.error(
+          "❌ Checkbanned returned invalid JSON."
+        );
+
+        data = null;
+      }
+
+      if (
+        data &&
+        data.nickname
+      ) {
+
+        console.log(
+          `✅ Player found: ${data.nickname}`
+        );
+
+        return res.json({
+
+          success: true,
+
+          uid:
+            String(
+              data.player_id ||
+              uid
+            ),
+
+          nickname:
+            String(
+              data.nickname
+            ),
+
+          region:
+            String(
+              data.region ||
+              "Unknown"
+            ),
+
+          level:
+            data.level ??
+            null,
+
+          isBanned:
+            Boolean(
+              data.is_banned
+            ),
+
+          status:
+            data.status ||
+            "UNKNOWN"
+
+        });
+
+      }
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "⚠️ Checkbanned lookup failed:",
+      error.message
+    );
+
+  }
+
+  /* =====================================================
+     ALL LOOKUPS FAILED
+  ===================================================== */
+
+  console.error(
+    `❌ Could not find/verify UID ${uid}`
+  );
+
+  return res.status(502).json({
+
+    success: false,
+
+    error:
+      "Free Fire lookup service is currently unavailable. Please try again in a moment."
+
+  });
+
 });
 
 /* =========================
@@ -264,13 +497,20 @@ const SERVICE_NAMES = {
 ========================= */
 
 const ORDERS_FILE =
-  path.join(__dirname, "orders.json");
+  path.join(
+    __dirname,
+    "orders.json"
+  );
 
 function loadOrders() {
 
   try {
 
-    if (!fs.existsSync(ORDERS_FILE)) {
+    if (
+      !fs.existsSync(
+        ORDERS_FILE
+      )
+    ) {
       return [];
     }
 
@@ -284,7 +524,9 @@ function loadOrders() {
       return [];
     }
 
-    return JSON.parse(content);
+    return JSON.parse(
+      content
+    );
 
   } catch (error) {
 
@@ -294,7 +536,9 @@ function loadOrders() {
     );
 
     return [];
+
   }
+
 }
 
 function saveOrders(orders) {
@@ -302,13 +546,17 @@ function saveOrders(orders) {
   try {
 
     fs.writeFileSync(
+
       ORDERS_FILE,
+
       JSON.stringify(
         orders,
         null,
         2
       ),
+
       "utf8"
+
     );
 
     return true;
@@ -321,7 +569,9 @@ function saveOrders(orders) {
     );
 
     return false;
+
   }
+
 }
 
 /* =========================
@@ -342,6 +592,7 @@ function generateOrderId() {
     );
 
   return `DAGI-${now}-${random}`;
+
 }
 
 /* =========================
@@ -363,9 +614,11 @@ function findProduct(
   return (
     serviceProducts.find(
       product =>
-        product.id === productId
+        product.id ===
+        productId
     ) || null
   );
+
 }
 
 /* =========================
@@ -376,7 +629,9 @@ app.get(
   "/api/products",
   (req, res) => {
 
-    res.json(PRODUCTS);
+    res.json(
+      PRODUCTS
+    );
 
   }
 );
@@ -393,7 +648,8 @@ app.get(
 
       status: "ok",
 
-      bot: "DAGITOPUP",
+      bot:
+        "DAGITOPUP",
 
       time:
         new Date().toISOString()
@@ -416,30 +672,18 @@ app.post(
       const {
 
         telegramId,
-
         telegramUser,
-
         service,
-
         serviceName,
-
         productId,
-
         productName,
-
         price,
-
         uid,
-
         nickname,
-
         paymentMethod,
-
         paymentReference
 
       } = req.body;
-
-      /* ---------- BASIC VALIDATION ---------- */
 
       if (!telegramId) {
 
@@ -494,8 +738,6 @@ app.post(
 
       }
 
-      /* ---------- SERVER PRICE CHECK ---------- */
-
       if (
         Number(price) !==
         Number(product.price)
@@ -509,8 +751,6 @@ app.post(
         });
 
       }
-
-      /* ---------- UID ---------- */
 
       if (!uid) {
 
@@ -551,8 +791,6 @@ app.post(
 
       }
 
-      /* ---------- PAYMENT ---------- */
-
       if (!paymentReference) {
 
         return res.status(400).json({
@@ -572,7 +810,9 @@ app.post(
         orderId,
 
         telegramId:
-          String(telegramId),
+          String(
+            telegramId
+          ),
 
         telegramUser:
           telegramUser || {},
@@ -597,7 +837,9 @@ app.post(
 
         nickname:
           nickname
-            ? String(nickname).trim()
+            ? String(
+                nickname
+              ).trim()
             : "",
 
         paymentMethod:
@@ -617,15 +859,17 @@ app.post(
 
       };
 
-      /* ---------- SAVE ---------- */
-
       const orders =
         loadOrders();
 
-      orders.push(order);
+      orders.push(
+        order
+      );
 
       const saved =
-        saveOrders(orders);
+        saveOrders(
+          orders
+        );
 
       if (!saved) {
 
@@ -638,15 +882,14 @@ app.post(
 
       }
 
-      /* ---------- ADMIN NOTIFICATION ---------- */
-
-      await notifyAdmin(order);
-
-      /* ---------- RESPONSE ---------- */
+      await notifyAdmin(
+        order
+      );
 
       return res.status(201).json({
 
-        success: true,
+        success:
+          true,
 
         orderId:
           order.orderId,
@@ -743,6 +986,7 @@ async function notifyAdmin(order) {
     );
 
     return;
+
   }
 
   try {
@@ -788,21 +1032,17 @@ PENDING
       Markup.inlineKeyboard([
 
         [
-
           Markup.button.callback(
             "💰 MARK PAID",
             `paid:${order.orderId}`
           )
-
         ],
 
         [
-
           Markup.button.callback(
             "✅ COMPLETE",
             `complete:${order.orderId}`
           )
-
         ]
 
       ])
@@ -817,6 +1057,7 @@ PENDING
     );
 
   }
+
 }
 
 /* =========================
@@ -861,12 +1102,10 @@ Tap the button below to start.
       Markup.inlineKeyboard([
 
         [
-
           Markup.button.webApp(
             "🚀 OPEN DAGITOPUP",
             webAppUrl
           )
-
         ]
 
       ])
@@ -895,12 +1134,10 @@ bot.command(
       Markup.inlineKeyboard([
 
         [
-
           Markup.button.webApp(
             "🛒 OPEN SHOP",
             webAppUrl
           )
-
         ]
 
       ])
@@ -1059,7 +1296,9 @@ bot.command(
   async ctx => {
 
     const telegramId =
-      String(ctx.from.id);
+      String(
+        ctx.from.id
+      );
 
     const orders =
       loadOrders()
@@ -1088,15 +1327,14 @@ bot.command(
       );
 
       return;
+
     }
 
     let message =
       "📦 YOUR DAGITOPUP ORDERS\n\n";
 
     orders
-
       .slice(0, 10)
-
       .forEach(
         order => {
 
@@ -1171,12 +1409,9 @@ bot.command(
   async ctx => {
 
     if (
-
       ADMIN_CHAT_ID &&
-
       String(ctx.from.id) !==
       String(ADMIN_CHAT_ID)
-
     ) {
 
       return ctx.reply(
@@ -1225,12 +1460,12 @@ bot.command(
     order.paidAt =
       new Date().toISOString();
 
-    saveOrders(orders);
+    saveOrders(
+      orders
+    );
 
     await ctx.reply(
-
       `💰 ${orderId} marked as PAID.`
-
     );
 
   }
@@ -1245,12 +1480,9 @@ bot.command(
   async ctx => {
 
     if (
-
       ADMIN_CHAT_ID &&
-
       String(ctx.from.id) !==
       String(ADMIN_CHAT_ID)
-
     ) {
 
       return ctx.reply(
@@ -1299,12 +1531,12 @@ bot.command(
     order.completedAt =
       new Date().toISOString();
 
-    saveOrders(orders);
+    saveOrders(
+      orders
+    );
 
     await ctx.reply(
-
       `✅ ${orderId} marked as COMPLETED.`
-
     );
 
   }
@@ -1319,12 +1551,9 @@ bot.action(
   async ctx => {
 
     if (
-
       ADMIN_CHAT_ID &&
-
       String(ctx.from.id) !==
       String(ADMIN_CHAT_ID)
-
     ) {
 
       await ctx.answerCbQuery(
@@ -1332,6 +1561,7 @@ bot.action(
       );
 
       return;
+
     }
 
     const orderId =
@@ -1354,6 +1584,7 @@ bot.action(
       );
 
       return;
+
     }
 
     order.status =
@@ -1362,7 +1593,9 @@ bot.action(
     order.paidAt =
       new Date().toISOString();
 
-    saveOrders(orders);
+    saveOrders(
+      orders
+    );
 
     await ctx.answerCbQuery(
       "Marked as paid."
@@ -1386,12 +1619,9 @@ bot.action(
   async ctx => {
 
     if (
-
       ADMIN_CHAT_ID &&
-
       String(ctx.from.id) !==
       String(ADMIN_CHAT_ID)
-
     ) {
 
       await ctx.answerCbQuery(
@@ -1399,6 +1629,7 @@ bot.action(
       );
 
       return;
+
     }
 
     const orderId =
@@ -1421,6 +1652,7 @@ bot.action(
       );
 
       return;
+
     }
 
     order.status =
@@ -1429,7 +1661,9 @@ bot.action(
     order.completedAt =
       new Date().toISOString();
 
-    saveOrders(orders);
+    saveOrders(
+      orders
+    );
 
     await ctx.answerCbQuery(
       "Order completed."
