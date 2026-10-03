@@ -1,13 +1,11 @@
-require("dotenv").config();
-
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { Telegraf, Markup } = require("telegraf");
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-const PORT = process.env.PORT || 10000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || "";
 
@@ -16,1437 +14,954 @@ if (!BOT_TOKEN) {
   process.exit(1);
 }
 
-/* =========================
-   EXPRESS
-========================= */
+const bot = new Telegraf(BOT_TOKEN);
+
+/* =========================================================
+   DAGITOPUP PRODUCTS
+========================================================= */
+
+const PRODUCTS = {
+  diamonds: [
+    {
+      id: "diamond_100",
+      name: "100 + 20 Diamonds",
+      price: 190
+    },
+    {
+      id: "diamond_310",
+      name: "310 + 21 Diamonds",
+      price: 380
+    },
+    {
+      id: "diamond_520",
+      name: "520 Diamonds",
+      price: 1080
+    },
+    {
+      id: "diamond_1060",
+      name: "1,060 Diamonds",
+      price: 3080
+    },
+    {
+      id: "diamond_2180",
+      name: "2,180 Diamonds",
+      price: 5000
+    },
+    {
+      id: "diamond_5600",
+      name: "5,600 Diamonds",
+      price: 12000
+    }
+  ],
+
+  membership: [
+    {
+      id: "membership_weekly",
+      name: "Weekly Membership",
+      price: 450
+    },
+    {
+      id: "membership_monthly",
+      name: "Monthly Membership",
+      price: 1000
+    }
+  ],
+
+  levelup: [
+    {
+      id: "level_6",
+      name: "Level 6 — 120 Diamonds",
+      price: 170
+    },
+    {
+      id: "level_10",
+      name: "Level 10 — 200 Diamonds",
+      price: 240
+    },
+    {
+      id: "level_15",
+      name: "Level 15 — 200 Diamonds",
+      price: 240
+    },
+    {
+      id: "level_20",
+      name: "Level 20 — 200 Diamonds",
+      price: 240
+    },
+    {
+      id: "level_25",
+      name: "Level 25 — 200 Diamonds",
+      price: 240
+    },
+    {
+      id: "level_30",
+      name: "Level 30 — 350 Diamonds",
+      price: 300
+    }
+  ],
+
+  booyah: [
+    {
+      id: "booyah_pass",
+      name: "Booyah Pass",
+      price: 600
+    }
+  ]
+};
+
+const SERVICE_NAMES = {
+  diamonds: "💎 Free Fire Diamonds",
+  membership: "🎫 Membership",
+  levelup: "📈 Level Up",
+  booyah: "🎟️ Booyah Pass"
+};
+
+/* =========================================================
+   FILE STORAGE
+========================================================= */
+
+const ORDERS_FILE = path.join(__dirname, "orders.json");
+
+function ensureOrdersFile() {
+  if (!fs.existsSync(ORDERS_FILE)) {
+    fs.writeFileSync(ORDERS_FILE, "[]", "utf8");
+  }
+}
+
+function readOrders() {
+  ensureOrdersFile();
+
+  try {
+    const data = fs.readFileSync(ORDERS_FILE, "utf8");
+    const orders = JSON.parse(data);
+
+    return Array.isArray(orders) ? orders : [];
+  } catch (error) {
+    console.error("❌ Could not read orders.json:", error);
+    return [];
+  }
+}
+
+function saveOrders(orders) {
+  fs.writeFileSync(
+    ORDERS_FILE,
+    JSON.stringify(orders, null, 2),
+    "utf8"
+  );
+}
+
+function generateOrderId() {
+  return `DAGI-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
+/* =========================================================
+   EXPRESS SETUP
+========================================================= */
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(__dirname, "public")));
 
-/* =========================
+/* =========================================================
+   HOME
+========================================================= */
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+/* =========================================================
+   HEALTH CHECK
+========================================================= */
+
+app.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    status: "DAGITOPUP is running",
+    time: new Date().toISOString()
+  });
+});
+
+/* =========================================================
+   PRODUCTS API
+========================================================= */
+
+app.get("/api/products", (req, res) => {
+  res.json({
+    success: true,
+    products: PRODUCTS
+  });
+});
+
+/* =========================================================
    FREE FIRE PLAYER LOOKUP
-========================= */
+========================================================= */
 
 /*
-  Uses the Free Fire FWX community API.
+  Automatic Free Fire nickname lookup is temporarily disabled.
 
-  /api/region?id=UID
+  The customer only enters their Free Fire UID.
 
-  This endpoint discovers the player's region
-  and returns nickname + UID.
-
-  Example response:
-
-  {
-    "nickname": "PlayerName",
-    "region": "ME",
-    "account_uid": "123456789"
-  }
+  DAGITOPUP will manually verify the UID/order before fulfillment.
 */
 
-app.get("/api/player/:uid", async (req, res) => {
-
+app.get("/api/player/:uid", (req, res) => {
   const uid = String(req.params.uid || "").trim();
 
-  /* ---------- UID VALIDATION ---------- */
-
-  if (!/^\d{6,14}$/.test(uid)) {
-
+  if (!/^\d{5,14}$/.test(uid)) {
     return res.status(400).json({
       success: false,
       error: "Invalid Free Fire UID."
     });
-
   }
 
-  console.log(`🔍 Checking Free Fire UID: ${uid}`);
-
-  try {
-
-    const url =
-      `https://freefirefwx-beta.squareweb.app/api/region?id=${encodeURIComponent(uid)}`;
-
-    console.log(
-      "🌐 Calling Free Fire region lookup..."
-    );
-
-    const response = await fetch(url, {
-      method: "GET",
-
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "DAGITOPUP/1.0"
-      },
-
-      signal: AbortSignal.timeout(15000)
-    });
-
-    const text = await response.text();
-
-    console.log(
-      `Free Fire API HTTP: ${response.status}`
-    );
-
-    console.log(
-      "Free Fire API response:",
-      text.slice(0, 2000)
-    );
-
-    /* ---------- API ERROR ---------- */
-
-    if (!response.ok) {
-
-      console.error(
-        `❌ Free Fire API returned HTTP ${response.status}`
-      );
-
-      return res.status(502).json({
-        success: false,
-        error:
-          "Free Fire player lookup is temporarily unavailable."
-      });
-
-    }
-
-    /* ---------- PARSE JSON ---------- */
-
-    let data;
-
-    try {
-
-      data = JSON.parse(text);
-
-    } catch (error) {
-
-      console.error(
-        "❌ Free Fire API returned invalid JSON."
-      );
-
-      return res.status(502).json({
-        success: false,
-        error:
-          "Free Fire lookup returned an invalid response."
-      });
-
-    }
-
-    console.log(
-      "Parsed Free Fire data:",
-      data
-    );
-
-    /* ---------- PLAYER DATA ---------- */
-
-    const nickname =
-      data.nickname ||
-      data.player_nickname ||
-      data.AccountName ||
-      data.accountName ||
-      "";
-
-    const region =
-      data.region ||
-      data.player_region ||
-      data.AccountRegion ||
-      "Unknown";
-
-    const playerId =
-      data.account_uid ||
-      data.accountId ||
-      data.player_id ||
-      uid;
-
-    /* ---------- PLAYER NOT FOUND ---------- */
-
-    if (!nickname) {
-
-      console.log(
-        `❌ Player not found for UID: ${uid}`
-      );
-
-      return res.status(404).json({
-        success: false,
-        error:
-          "Free Fire player not found. Please check the UID."
-      });
-
-    }
-
-    /* ---------- SUCCESS ---------- */
-
-    console.log(
-      `✅ Player found: ${nickname}`
-    );
-
-    console.log(
-      `🌍 Region: ${region}`
-    );
-
-    console.log(
-      `🆔 UID: ${playerId}`
-    );
-
-    return res.json({
-
-      success: true,
-
-      uid:
-        String(playerId),
-
-      nickname:
-        String(nickname),
-
-      region:
-        String(region),
-
-      level:
-        data.level ??
-        null,
-
-      isBanned:
-        false,
-
-      status:
-        "PLAYER FOUND"
-
-    });
-
-  } catch (error) {
-
-    console.error(
-      "❌ Free Fire lookup error:",
-      error.message
-    );
-
-    return res.status(502).json({
-
-      success: false,
-
-      error:
-        "Free Fire player lookup is temporarily unavailable. Please try again."
-
-    });
-
-  }
-
+  return res.json({
+    success: true,
+    uid: uid,
+    nickname: "",
+    region: "Not verified",
+    level: null,
+    isBanned: null,
+    status: "UID RECEIVED"
+  });
 });
 
-/* =========================
-   PRODUCTS
-========================= */
+/* =========================================================
+   CREATE ORDER
+========================================================= */
 
-const PRODUCTS = {
-
-  diamonds: [
-
-    {
-      id: "diamond-100",
-      name: "100 + 20 Diamonds",
-      price: 190
-    },
-
-    {
-      id: "diamond-310",
-      name: "310 + 21 Diamonds",
-      price: 380
-    },
-
-    {
-      id: "diamond-520",
-      name: "520 Diamonds",
-      price: 1080
-    },
-
-    {
-      id: "diamond-1060",
-      name: "1,060 Diamonds",
-      price: 3080
-    },
-
-    {
-      id: "diamond-2180",
-      name: "2,180 Diamonds",
-      price: 5000
-    },
-
-    {
-      id: "diamond-5600",
-      name: "5,600 Diamonds",
-      price: 12000
-    }
-
-  ],
-
-  membership: [
-
-    {
-      id: "membership-weekly",
-      name: "Weekly Membership",
-      price: 450
-    },
-
-    {
-      id: "membership-monthly",
-      name: "Monthly Membership",
-      price: 1000
-    }
-
-  ],
-
-  levelup: [
-
-    {
-      id: "level-6",
-      name: "Level 6",
-      price: 170
-    },
-
-    {
-      id: "level-10",
-      name: "Level 10",
-      price: 240
-    },
-
-    {
-      id: "level-15",
-      name: "Level 15",
-      price: 240
-    },
-
-    {
-      id: "level-20",
-      name: "Level 20",
-      price: 240
-    },
-
-    {
-      id: "level-25",
-      name: "Level 25",
-      price: 240
-    },
-
-    {
-      id: "level-30",
-      name: "Level 30",
-      price: 300
-    }
-
-  ],
-
-  booyah: [
-
-    {
-      id: "booyah-pass",
-      name: "Booyah Pass",
-      price: 600
-    }
-
-  ]
-
-};
-
-/* =========================
-   SERVICE NAMES
-========================= */
-
-const SERVICE_NAMES = {
-
-  diamonds: "FF Diamonds",
-
-  membership: "Membership",
-
-  levelup: "Level Up",
-
-  booyah: "Booyah Pass"
-
-};
-
-/* =========================
-   ORDER STORAGE
-========================= */
-
-const ORDERS_FILE =
-  path.join(
-    __dirname,
-    "orders.json"
-  );
-
-function loadOrders() {
-
+app.post("/api/order", async (req, res) => {
   try {
-
-    if (
-      !fs.existsSync(
-        ORDERS_FILE
-      )
-    ) {
-      return [];
-    }
-
-    const content =
-      fs.readFileSync(
-        ORDERS_FILE,
-        "utf8"
-      );
-
-    if (!content.trim()) {
-      return [];
-    }
-
-    return JSON.parse(
-      content
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Could not read orders.json:",
-      error
-    );
-
-    return [];
-
-  }
-
-}
-
-function saveOrders(orders) {
-
-  try {
-
-    fs.writeFileSync(
-
-      ORDERS_FILE,
-
-      JSON.stringify(
-        orders,
-        null,
-        2
-      ),
-
-      "utf8"
-
-    );
-
-    return true;
-
-  } catch (error) {
-
-    console.error(
-      "Could not save orders:",
-      error
-    );
-
-    return false;
-
-  }
-
-}
-
-/* =========================
-   ORDER ID
-========================= */
-
-function generateOrderId() {
-
-  const now =
-    Date.now()
-      .toString()
-      .slice(-8);
-
-  const random =
-    Math.floor(
-      100 +
-      Math.random() * 900
-    );
-
-  return `DAGI-${now}-${random}`;
-
-}
-
-/* =========================
-   PRODUCT FINDER
-========================= */
-
-function findProduct(
-  service,
-  productId
-) {
-
-  const serviceProducts =
-    PRODUCTS[service];
-
-  if (!serviceProducts) {
-    return null;
-  }
-
-  return (
-    serviceProducts.find(
-      product =>
-        product.id ===
-        productId
-    ) || null
-  );
-
-}
-
-/* =========================
-   API: PRODUCTS
-========================= */
-
-app.get(
-  "/api/products",
-  (req, res) => {
-
-    res.json(
-      PRODUCTS
-    );
-
-  }
-);
-
-/* =========================
-   API: HEALTH
-========================= */
-
-app.get(
-  "/health",
-  (req, res) => {
-
-    res.json({
-
-      status: "ok",
-
-      bot:
-        "DAGITOPUP",
-
-      time:
-        new Date().toISOString()
-
-    });
-
-  }
-);
-
-/* =========================
-   API: CREATE ORDER
-========================= */
-
-app.post(
-  "/api/order",
-  async (req, res) => {
-
-    try {
-
-      const {
-
-        telegramId,
-        telegramUser,
-        service,
-        serviceName,
-        productId,
-        productName,
-        price,
-        uid,
-        nickname,
-        paymentMethod,
-        paymentReference
-
-      } = req.body;
-
-      if (!telegramId) {
-
-        return res.status(400).json({
-
-          error:
-            "Telegram user information is missing."
-
-        });
-
-      }
-
-      if (
-        !service ||
-        !PRODUCTS[service]
-      ) {
-
-        return res.status(400).json({
-
-          error:
-            "Invalid service."
-
-        });
-
-      }
-
-      if (!productId) {
-
-        return res.status(400).json({
-
-          error:
-            "Please select a product."
-
-        });
-
-      }
-
-      const product =
-        findProduct(
-          service,
-          productId
-        );
-
-      if (!product) {
-
-        return res.status(400).json({
-
-          error:
-            "Invalid product."
-
-        });
-
-      }
-
-      if (
-        Number(price) !==
-        Number(product.price)
-      ) {
-
-        return res.status(400).json({
-
-          error:
-            "Invalid product price."
-
-        });
-
-      }
-
-      if (!uid) {
-
-        return res.status(400).json({
-
-          error:
-            "Free Fire UID is required."
-
-        });
-
-      }
-
-      if (
-        !/^[0-9]+$/.test(
-          String(uid)
-        )
-      ) {
-
-        return res.status(400).json({
-
-          error:
-            "Free Fire UID must contain numbers only."
-
-        });
-
-      }
-
-      if (
-        String(uid).length < 5
-      ) {
-
-        return res.status(400).json({
-
-          error:
-            "Invalid Free Fire UID."
-
-        });
-
-      }
-
-      if (!paymentReference) {
-
-        return res.status(400).json({
-
-          error:
-            "Telebirr transaction/reference number is required."
-
-        });
-
-      }
-
-      const orderId =
-        generateOrderId();
-
-      const order = {
-
-        orderId,
-
-        telegramId:
-          String(
-            telegramId
-          ),
-
-        telegramUser:
-          telegramUser || {},
-
-        service,
-
-        serviceName:
-          SERVICE_NAMES[service] ||
-          serviceName ||
-          "Free Fire Top Up",
-
-        productId,
-
-        productName:
-          product.name,
-
-        price:
-          product.price,
-
-        uid:
-          String(uid),
-
-        nickname:
-          nickname
-            ? String(
-                nickname
-              ).trim()
-            : "",
-
-        paymentMethod:
-          paymentMethod ||
-          "Telebirr",
-
-        paymentReference:
-          String(
-            paymentReference
-          ).trim(),
-
-        status:
-          "pending",
-
-        createdAt:
-          new Date().toISOString()
-
-      };
-
-      const orders =
-        loadOrders();
-
-      orders.push(
-        order
-      );
-
-      const saved =
-        saveOrders(
-          orders
-        );
-
-      if (!saved) {
-
-        return res.status(500).json({
-
-          error:
-            "Could not save your order."
-
-        });
-
-      }
-
-      await notifyAdmin(
-        order
-      );
-
-      return res.status(201).json({
-
-        success:
-          true,
-
-        orderId:
-          order.orderId,
-
-        message:
-          "Order submitted successfully."
-
-      });
-
-    } catch (error) {
-
-      console.error(
-        "ORDER ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-
-        error:
-          "Something went wrong while creating the order."
-
-      });
-
-    }
-
-  }
-);
-
-/* =========================
-   API: USER ORDERS
-========================= */
-
-app.get(
-  "/api/orders",
-  (req, res) => {
-
-    const telegramId =
-      String(
-        req.query.telegramId ||
-        ""
-      );
+    const {
+      telegramId,
+      username,
+      service,
+      productId,
+      productName,
+      price,
+      uid,
+      nickname,
+      paymentRef
+    } = req.body;
+
+    /* ---------- Telegram ID ---------- */
 
     if (!telegramId) {
-
       return res.status(400).json({
-
-        error:
-          "Telegram ID is required."
-
+        success: false,
+        error: "Telegram user ID is required."
       });
-
     }
 
-    const orders =
-      loadOrders();
+    /* ---------- Service ---------- */
 
-    const userOrders =
-      orders
+    if (!PRODUCTS[service]) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid service."
+      });
+    }
 
-        .filter(
-          order =>
-            String(
-              order.telegramId
-            ) === telegramId
-        )
+    /* ---------- Product ---------- */
 
-        .sort(
-          (a, b) =>
-            new Date(
-              b.createdAt
-            ) -
-            new Date(
-              a.createdAt
-            )
-        );
-
-    res.json(
-      userOrders
+    const product = PRODUCTS[service].find(
+      item => item.id === productId
     );
 
-  }
-);
+    if (!product) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid product."
+      });
+    }
 
-/* =========================
+    /* ---------- Price ---------- */
+
+    const submittedPrice = Number(price);
+
+    if (submittedPrice !== product.price) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid price."
+      });
+    }
+
+    /* ---------- UID ---------- */
+
+    const cleanUID = String(uid || "").trim();
+
+    if (!/^\d{5,14}$/.test(cleanUID)) {
+      return res.status(400).json({
+        success: false,
+        error: "Please enter a valid Free Fire UID."
+      });
+    }
+
+    /* ---------- Payment Reference ---------- */
+
+    const cleanPaymentRef = String(paymentRef || "").trim();
+
+    if (!cleanPaymentRef) {
+      return res.status(400).json({
+        success: false,
+        error: "Payment transaction/reference number is required."
+      });
+    }
+
+    /* ---------- Order ---------- */
+
+    const order = {
+      id: generateOrderId(),
+
+      telegramId: String(telegramId),
+
+      username: username
+        ? String(username)
+        : "",
+
+      service: service,
+
+      serviceName:
+        SERVICE_NAMES[service] || service,
+
+      productId: product.id,
+
+      productName: product.name,
+
+      price: product.price,
+
+      uid: cleanUID,
+
+      /*
+        Nickname is intentionally not collected
+        from the customer.
+      */
+      nickname: "",
+
+      paymentRef: cleanPaymentRef,
+
+      status: "pending",
+
+      createdAt: new Date().toISOString(),
+
+      paidAt: null,
+
+      completedAt: null
+    };
+
+    const orders = readOrders();
+
+    orders.push(order);
+
+    saveOrders(orders);
+
+    console.log("✅ New order:", order.id);
+
+    /* ---------- Notify Admin ---------- */
+
+    await notifyAdmin(order);
+
+    return res.json({
+      success: true,
+      message: "Order submitted successfully.",
+      order: {
+        id: order.id,
+        status: order.status,
+        service: order.serviceName,
+        product: order.productName,
+        price: order.price,
+        uid: order.uid,
+        nickname: "Not verified"
+      }
+    });
+
+  } catch (error) {
+
+    console.error("❌ Order error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Could not create order."
+    });
+  }
+});
+
+/* =========================================================
+   GET ORDERS
+========================================================= */
+
+app.get("/api/orders", (req, res) => {
+  try {
+    const telegramId = String(req.query.telegramId || "").trim();
+
+    if (!telegramId) {
+      return res.status(400).json({
+        success: false,
+        error: "Telegram user ID is required."
+      });
+    }
+
+    const orders = readOrders();
+
+    const userOrders = orders
+      .filter(order =>
+        String(order.telegramId) === telegramId
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt) -
+          new Date(a.createdAt)
+      );
+
+    return res.json({
+      success: true,
+      orders: userOrders
+    });
+
+  } catch (error) {
+
+    console.error("❌ Orders error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "Could not load orders."
+    });
+  }
+});
+
+/* =========================================================
    ADMIN NOTIFICATION
-========================= */
+========================================================= */
 
 async function notifyAdmin(order) {
 
   if (!ADMIN_CHAT_ID) {
-
     console.log(
-      "ADMIN_CHAT_ID not configured. Order saved without Telegram admin notification."
+      "ℹ️ ADMIN_CHAT_ID is not configured. Order saved without admin notification."
     );
 
     return;
-
   }
 
   try {
 
-    await bot.telegram.sendMessage(
+    const message = `
+🔥 <b>NEW DAGITOPUP ORDER</b>
 
-      ADMIN_CHAT_ID,
+🧾 <b>Order ID:</b>
+<code>${escapeTelegramHtml(order.id)}</code>
 
-      `
-🔥 NEW DAGITOPUP ORDER
+👤 <b>Username:</b>
+${escapeTelegramHtml(order.username || "Not provided")}
 
-🆔 Order:
-${order.orderId}
+🛒 <b>Service:</b>
+${escapeTelegramHtml(order.serviceName)}
 
-🎮 Service:
-${order.serviceName}
+📦 <b>Package:</b>
+${escapeTelegramHtml(order.productName)}
 
-📦 Package:
-${order.productName}
-
-💰 Amount:
+💰 <b>Price:</b>
 ${order.price} ETB
 
-👤 Telegram ID:
-${order.telegramId}
+🎯 <b>Free Fire UID:</b>
+<code>${escapeTelegramHtml(order.uid)}</code>
 
-🎯 Free Fire UID:
-${order.uid}
+🧑 <b>Account Name:</b>
+Not verified
 
-🧑 Name:
-${order.nickname || "Not provided"}
+💳 <b>Payment Reference:</b>
+<code>${escapeTelegramHtml(order.paymentRef)}</code>
 
-💳 Payment:
-${order.paymentMethod}
-
-🧾 Transaction:
-${order.paymentReference}
-
-📌 Status:
+📌 <b>Status:</b>
 PENDING
-      `,
+`;
 
-      Markup.inlineKeyboard([
-
-        [
-          Markup.button.callback(
-            "💰 MARK PAID",
-            `paid:${order.orderId}`
-          )
-        ],
-
-        [
-          Markup.button.callback(
-            "✅ COMPLETE",
-            `complete:${order.orderId}`
-          )
-        ]
-
-      ])
-
+    await bot.telegram.sendMessage(
+      ADMIN_CHAT_ID,
+      message,
+      {
+        parse_mode: "HTML",
+        ...Markup.inlineKeyboard([
+          [
+            Markup.button.callback(
+              "✅ Mark Paid",
+              `paid:${order.id}`
+            )
+          ],
+          [
+            Markup.button.callback(
+              "📦 Complete Order",
+              `complete:${order.id}`
+            )
+          ]
+        ])
+      }
     );
 
   } catch (error) {
 
     console.error(
-      "ADMIN NOTIFICATION ERROR:",
+      "❌ Admin notification error:",
       error
     );
-
   }
-
 }
 
-/* =========================
-   TELEGRAM BOT
-========================= */
+/* =========================================================
+   TELEGRAM HTML ESCAPE
+========================================================= */
 
-const bot =
-  new Telegraf(
-    BOT_TOKEN
-  );
+function escapeTelegramHtml(value) {
 
-/* =========================
-   /START
-========================= */
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
-bot.start(
-  async ctx => {
+/* =========================================================
+   TELEGRAM START
+========================================================= */
 
-    const webAppUrl =
-      process.env.WEB_APP_URL ||
-      "https://dagitopup.onrender.com/";
+bot.start(async ctx => {
 
-    await ctx.reply(
+  const firstName =
+    ctx.from.first_name || "there";
 
-      `
-🔥 DAGITOPUP 🇪🇹
+  await ctx.reply(
+`🔥 <b>DAGITOPUP 🇪🇹</b>
 
-Welcome to DAGITOPUP!
+Welcome, ${escapeTelegramHtml(firstName)}!
 
 💎 Free Fire Diamonds
 🎫 Membership
 📈 Level Up
 🎟️ Booyah Pass
 
-💰 Easy payment with Telebirr
 ⚡ Fast order processing
-📦 Manual fulfillment
+📦 Manual order fulfillment
 
-Tap the button below to start.
-      `,
+Choose an option below 👇`,
+    {
+      parse_mode: "HTML",
 
-      Markup.inlineKeyboard([
+      ...Markup.keyboard([
+        ["💎 Diamonds", "🎫 Membership"],
+        ["📈 Level Up", "🎟️ Booyah Pass"],
+        ["📦 My Orders", "💰 Payment"],
+        ["👨‍💼 Support"]
+      ]).resize()
+    }
+  );
 
-        [
-          Markup.button.webApp(
-            "🚀 OPEN DAGITOPUP",
-            webAppUrl
-          )
-        ]
+});
 
-      ])
+/* =========================================================
+   MAIN MENU
+========================================================= */
 
-    );
+bot.command("menu", async ctx => {
 
-  }
-);
+  await ctx.reply(
+`🔥 <b>DAGITOPUP 🇪🇹</b>
 
-/* =========================
-   /MENU
-========================= */
+Welcome to DAGITOPUP!
 
-bot.command(
-  "menu",
-  async ctx => {
+What would you like to order?
 
-    const webAppUrl =
-      process.env.WEB_APP_URL ||
-      "https://dagitopup.onrender.com/";
+💎 Diamonds
+🎫 Membership
+📈 Level Up
+🎟️ Booyah Pass
 
-    await ctx.reply(
+📦 My Orders
+💰 Payment
+👨‍💼 Support`,
+    {
+      parse_mode: "HTML"
+    }
+  );
 
-      "🏠 Open the DAGITOPUP shop:",
+});
 
-      Markup.inlineKeyboard([
+/* =========================================================
+   DIAMONDS
+========================================================= */
 
-        [
-          Markup.button.webApp(
-            "🛒 OPEN SHOP",
-            webAppUrl
-          )
-        ]
+bot.command("diamonds", async ctx => {
 
-      ])
+  const items = PRODUCTS.diamonds
+    .map(
+      item =>
+        `💎 ${item.name} — <b>${item.price} ETB</b>`
+    )
+    .join("\n");
 
-    );
+  await ctx.reply(
+`💎 <b>FREE FIRE DIAMONDS</b>
 
-  }
-);
+${items}
 
-/* =========================
-   /DIAMONDS
-========================= */
+📲 Open DAGITOPUP Mini App to order.`,
+    {
+      parse_mode: "HTML"
+    }
+  );
 
-bot.command(
-  "diamonds",
-  async ctx => {
+});
 
-    await ctx.reply(
+/* =========================================================
+   MEMBERSHIP
+========================================================= */
 
-      `
-💎 DAGITOPUP DIAMONDS
+bot.command("membership", async ctx => {
 
-100 + 20 → 190 ETB
-310 + 21 → 380 ETB
-520 → 1,080 ETB
-1,060 → 3,080 ETB
-2,180 → 5,000 ETB
-5,600 → 12,000 ETB
+  const items = PRODUCTS.membership
+    .map(
+      item =>
+        `🎫 ${item.name} — <b>${item.price} ETB</b>`
+    )
+    .join("\n");
 
-Open the shop to order.
-      `
+  await ctx.reply(
+`🎫 <b>MEMBERSHIP</b>
 
-    );
+${items}
 
-  }
-);
+📲 Open DAGITOPUP Mini App to order.`,
+    {
+      parse_mode: "HTML"
+    }
+  );
 
-/* =========================
-   /MEMBERSHIP
-========================= */
+});
 
-bot.command(
-  "membership",
-  async ctx => {
+/* =========================================================
+   LEVEL UP
+========================================================= */
 
-    await ctx.reply(
+bot.command("levelup", async ctx => {
 
-      `
-🎫 MEMBERSHIP
+  const items = PRODUCTS.levelup
+    .map(
+      item =>
+        `📈 ${item.name} — <b>${item.price} ETB</b>`
+    )
+    .join("\n");
 
-Weekly → 450 ETB
-Monthly → 1,000 ETB
+  await ctx.reply(
+`📈 <b>LEVEL UP</b>
 
-Open DAGITOPUP to order.
-      `
+${items}
 
-    );
+📲 Open DAGITOPUP Mini App to order.`,
+    {
+      parse_mode: "HTML"
+    }
+  );
 
-  }
-);
+});
 
-/* =========================
-   /LEVELUP
-========================= */
+/* =========================================================
+   BOOYAH PASS
+========================================================= */
 
-bot.command(
-  "levelup",
-  async ctx => {
+bot.command("booyah", async ctx => {
 
-    await ctx.reply(
+  await ctx.reply(
+`🎟️ <b>BOOYAH PASS</b>
 
-      `
-📈 LEVEL UP
+🎟️ Booyah Pass — <b>600 ETB</b>
 
-Level 6 → 170 ETB
-Level 10 → 240 ETB
-Level 15 → 240 ETB
-Level 20 → 240 ETB
-Level 25 → 240 ETB
-Level 30 → 300 ETB
-      `
+📲 Open DAGITOPUP Mini App to order.`,
+    {
+      parse_mode: "HTML"
+    }
+  );
 
-    );
+});
 
-  }
-);
+/* =========================================================
+   PAYMENT
+========================================================= */
 
-/* =========================
-   /BOOYAH
-========================= */
+bot.command("payment", async ctx => {
 
-bot.command(
-  "booyah",
-  async ctx => {
+  await ctx.reply(
+`💰 <b>DAGITOPUP PAYMENT 🇪🇹</b>
 
-    await ctx.reply(
-
-      `
-🎟️ BOOYAH PASS
-
-Price:
-600 ETB
-
-Open DAGITOPUP to order.
-      `
-
-    );
-
-  }
-);
-
-/* =========================
-   /PAYMENT
-========================= */
-
-bot.command(
-  "payment",
-  async ctx => {
-
-    await ctx.reply(
-
-      `
-💰 DAGITOPUP PAYMENT 🇪🇹
-
-📱 Payment Method:
+📱 <b>Payment Method:</b>
 Telebirr
 
-👤 Account Name:
+👤 <b>Account Name:</b>
 Abebaw Adamu
 
-☎️ Telebirr Number:
+☎️ <b>Telebirr Number:</b>
 0978454451
 
-After payment:
+After making your payment:
 
-1️⃣ Make the Telebirr payment.
-2️⃣ Keep your transaction/reference number.
-3️⃣ Enter it when placing your order.
-4️⃣ DAGITOPUP will review the payment.
+1️⃣ Make your Telebirr payment.
+2️⃣ Enter your transaction/reference number.
+3️⃣ Submit your order.
+4️⃣ DAGITOPUP will confirm the payment.
 5️⃣ Your order will be manually fulfilled.
 
-⚠️ Please pay the exact amount.
-      `
-
-    );
-
-  }
-);
-
-/* =========================
-   /ORDERS
-========================= */
-
-bot.command(
-  "orders",
-  async ctx => {
-
-    const telegramId =
-      String(
-        ctx.from.id
-      );
-
-    const orders =
-      loadOrders()
-
-        .filter(
-          order =>
-            String(
-              order.telegramId
-            ) === telegramId
-        )
-
-        .sort(
-          (a, b) =>
-            new Date(
-              b.createdAt
-            ) -
-            new Date(
-              a.createdAt
-            )
-        );
-
-    if (!orders.length) {
-
-      await ctx.reply(
-        "📦 You don't have any DAGITOPUP orders yet."
-      );
-
-      return;
-
+⚠️ Please make sure the payment amount is correct.`,
+    {
+      parse_mode: "HTML"
     }
+  );
 
-    let message =
-      "📦 YOUR DAGITOPUP ORDERS\n\n";
+});
 
-    orders
-      .slice(0, 10)
-      .forEach(
-        order => {
+/* =========================================================
+   SUPPORT
+========================================================= */
 
-          message +=
-            `🆔 ${order.orderId}\n` +
-            `📦 ${order.productName}\n` +
-            `💰 ${order.price} ETB\n` +
-            `🎯 UID: ${order.uid}\n` +
-            `📌 ${order.status}\n\n`;
+bot.command("support", async ctx => {
 
-        }
-      );
+  await ctx.reply(
+`👨‍💼 <b>DAGITOPUP SUPPORT</b>
 
-    await ctx.reply(
-      message
-    );
+Need help with your order?
 
-  }
-);
-
-/* =========================
-   /SUPPORT
-========================= */
-
-bot.command(
-  "support",
-  async ctx => {
-
-    await ctx.reply(
-
-      `
-👨‍💼 DAGITOPUP SUPPORT
-
-If you need help with an order,
-please send:
-
-🆔 Order ID
+Please send your:
+🧾 Order ID
 🎯 Free Fire UID
-🧾 Payment reference
+💳 Payment reference
 
-We will check your order manually.
-      `
+and describe the problem.
 
+Our support team will assist you.`,
+    {
+      parse_mode: "HTML"
+    }
+  );
+
+});
+
+/* =========================================================
+   ORDERS
+========================================================= */
+
+bot.command("orders", async ctx => {
+
+  const telegramId = String(ctx.from.id);
+
+  const orders = readOrders()
+    .filter(
+      order =>
+        String(order.telegramId) === telegramId
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt) -
+        new Date(a.createdAt)
     );
 
-  }
-);
+  if (orders.length === 0) {
 
-/* =========================
-   /MYID
-========================= */
+    return ctx.reply(
+`📦 <b>MY ORDERS</b>
 
-bot.command(
-  "myid",
-  async ctx => {
+You don't have any orders yet.
 
-    await ctx.reply(
-
-      `🆔 Your Telegram ID is:\n${ctx.from.id}`
-
+Open DAGITOPUP and place your first order! 🔥`,
+      {
+        parse_mode: "HTML"
+      }
     );
-
   }
-);
 
-/* =========================
-   ADMIN: /PAID
-========================= */
+  const text = orders
+    .slice(0, 10)
+    .map(order => {
 
-bot.command(
-  "paid",
-  async ctx => {
+      return `🧾 <b>${escapeTelegramHtml(order.id)}</b>
+📦 ${escapeTelegramHtml(order.productName)}
+💰 ${order.price} ETB
+🎯 UID: <code>${escapeTelegramHtml(order.uid)}</code>
+📌 Status: ${escapeTelegramHtml(order.status)}
+`;
+    })
+    .join("\n");
+
+  await ctx.reply(
+`📦 <b>MY ORDERS</b>
+
+${text}`,
+    {
+      parse_mode: "HTML"
+    }
+  );
+
+});
+
+/* =========================================================
+   MY ID
+========================================================= */
+
+bot.command("myid", async ctx => {
+
+  await ctx.reply(
+`🆔 Your Telegram ID:
+
+<code>${ctx.from.id}</code>`,
+    {
+      parse_mode: "HTML"
+    }
+  );
+
+});
+
+/* =========================================================
+   ADMIN: MARK PAID
+========================================================= */
+
+bot.command("paid", async ctx => {
+
+  if (
+    ADMIN_CHAT_ID &&
+    String(ctx.chat.id) !== String(ADMIN_CHAT_ID)
+  ) {
+    return;
+  }
+
+  const parts = ctx.message.text.trim().split(/\s+/);
+
+  if (!parts[1]) {
+
+    return ctx.reply(
+      "Usage: /paid ORDER_ID"
+    );
+  }
+
+  const orderId = parts[1];
+
+  const orders = readOrders();
+
+  const order = orders.find(
+    item => item.id === orderId
+  );
+
+  if (!order) {
+
+    return ctx.reply(
+      "❌ Order not found."
+    );
+  }
+
+  order.status = "paid";
+  order.paidAt = new Date().toISOString();
+
+  saveOrders(orders);
+
+  await ctx.reply(
+`✅ <b>PAYMENT MARKED PAID</b>
+
+🧾 Order:
+<code>${escapeTelegramHtml(order.id)}</code>
+
+📦 ${escapeTelegramHtml(order.productName)}
+
+🎯 UID:
+<code>${escapeTelegramHtml(order.uid)}</code>`,
+    {
+      parse_mode: "HTML"
+    }
+  );
+
+});
+
+/* =========================================================
+   ADMIN: COMPLETE
+========================================================= */
+
+bot.command("complete", async ctx => {
+
+  if (
+    ADMIN_CHAT_ID &&
+    String(ctx.chat.id) !== String(ADMIN_CHAT_ID)
+  ) {
+    return;
+  }
+
+  const parts = ctx.message.text.trim().split(/\s+/);
+
+  if (!parts[1]) {
+
+    return ctx.reply(
+      "Usage: /complete ORDER_ID"
+    );
+  }
+
+  const orderId = parts[1];
+
+  const orders = readOrders();
+
+  const order = orders.find(
+    item => item.id === orderId
+  );
+
+  if (!order) {
+
+    return ctx.reply(
+      "❌ Order not found."
+    );
+  }
+
+  order.status = "completed";
+  order.completedAt =
+    new Date().toISOString();
+
+  saveOrders(orders);
+
+  await ctx.reply(
+`🎉 <b>ORDER COMPLETED</b>
+
+🧾 Order:
+<code>${escapeTelegramHtml(order.id)}</code>
+
+📦 ${escapeTelegramHtml(order.productName)}
+
+🎯 UID:
+<code>${escapeTelegramHtml(order.uid)}</code>
+
+✅ Status: COMPLETED`,
+    {
+      parse_mode: "HTML"
+    }
+  );
+
+});
+
+/* =========================================================
+   ADMIN BUTTON: MARK PAID
+========================================================= */
+
+bot.action(/^paid:(.+)$/, async ctx => {
+
+  try {
 
     if (
       ADMIN_CHAT_ID &&
-      String(ctx.from.id) !==
-      String(ADMIN_CHAT_ID)
+      String(ctx.chat.id) !== String(ADMIN_CHAT_ID)
     ) {
-
-      return ctx.reply(
-        "❌ You are not authorized."
-      );
-
-    }
-
-    const parts =
-      ctx.message.text
-        .trim()
-        .split(/\s+/);
-
-    const orderId =
-      parts[1];
-
-    if (!orderId) {
-
-      return ctx.reply(
-        "Usage:\n/paid DAGI-XXXXXXXX-XXX"
-      );
-
-    }
-
-    const orders =
-      loadOrders();
-
-    const order =
-      orders.find(
-        item =>
-          item.orderId ===
-          orderId
-      );
-
-    if (!order) {
-
-      return ctx.reply(
-        "❌ Order not found."
-      );
-
-    }
-
-    order.status =
-      "paid";
-
-    order.paidAt =
-      new Date().toISOString();
-
-    saveOrders(
-      orders
-    );
-
-    await ctx.reply(
-      `💰 ${orderId} marked as PAID.`
-    );
-
-  }
-);
-
-/* =========================
-   ADMIN: /COMPLETE
-========================= */
-
-bot.command(
-  "complete",
-  async ctx => {
-
-    if (
-      ADMIN_CHAT_ID &&
-      String(ctx.from.id) !==
-      String(ADMIN_CHAT_ID)
-    ) {
-
-      return ctx.reply(
-        "❌ You are not authorized."
-      );
-
-    }
-
-    const parts =
-      ctx.message.text
-        .trim()
-        .split(/\s+/);
-
-    const orderId =
-      parts[1];
-
-    if (!orderId) {
-
-      return ctx.reply(
-        "Usage:\n/complete DAGI-XXXXXXXX-XXX"
-      );
-
-    }
-
-    const orders =
-      loadOrders();
-
-    const order =
-      orders.find(
-        item =>
-          item.orderId ===
-          orderId
-      );
-
-    if (!order) {
-
-      return ctx.reply(
-        "❌ Order not found."
-      );
-
-    }
-
-    order.status =
-      "completed";
-
-    order.completedAt =
-      new Date().toISOString();
-
-    saveOrders(
-      orders
-    );
-
-    await ctx.reply(
-      `✅ ${orderId} marked as COMPLETED.`
-    );
-
-  }
-);
-
-/* =========================
-   ADMIN BUTTON: PAID
-========================= */
-
-bot.action(
-  /^paid:(.+)$/,
-  async ctx => {
-
-    if (
-      ADMIN_CHAT_ID &&
-      String(ctx.from.id) !==
-      String(ADMIN_CHAT_ID)
-    ) {
-
-      await ctx.answerCbQuery(
+      return ctx.answerCbQuery(
         "Not authorized."
       );
-
-      return;
-
     }
 
-    const orderId =
-      ctx.match[1];
+    const orderId = ctx.match[1];
 
-    const orders =
-      loadOrders();
+    const orders = readOrders();
 
-    const order =
-      orders.find(
-        item =>
-          item.orderId ===
-          orderId
-      );
+    const order = orders.find(
+      item => item.id === orderId
+    );
 
     if (!order) {
 
@@ -1455,66 +970,65 @@ bot.action(
       );
 
       return;
-
     }
 
-    order.status =
-      "paid";
-
+    order.status = "paid";
     order.paidAt =
       new Date().toISOString();
 
-    saveOrders(
-      orders
-    );
+    saveOrders(orders);
 
     await ctx.answerCbQuery(
-      "Marked as paid."
+      "Payment marked as paid."
     );
 
-    await ctx.editMessageText(
-
-      `💰 PAID\n\nOrder: ${orderId}\nPackage: ${order.productName}\nAmount: ${order.price} ETB`
-
+    await ctx.editMessageReplyMarkup(
+      {
+        inline_keyboard: [
+          [
+            Markup.button.callback(
+              "📦 Complete Order",
+              `complete:${order.id}`
+            )
+          ]
+        ]
+      }
     );
 
+  } catch (error) {
+
+    console.error(
+      "❌ Paid button error:",
+      error
+    );
   }
-);
 
-/* =========================
+});
+
+/* =========================================================
    ADMIN BUTTON: COMPLETE
-========================= */
+========================================================= */
 
-bot.action(
-  /^complete:(.+)$/,
-  async ctx => {
+bot.action(/^complete:(.+)$/, async ctx => {
+
+  try {
 
     if (
       ADMIN_CHAT_ID &&
-      String(ctx.from.id) !==
-      String(ADMIN_CHAT_ID)
+      String(ctx.chat.id) !== String(ADMIN_CHAT_ID)
     ) {
-
-      await ctx.answerCbQuery(
+      return ctx.answerCbQuery(
         "Not authorized."
       );
-
-      return;
-
     }
 
-    const orderId =
-      ctx.match[1];
+    const orderId = ctx.match[1];
 
-    const orders =
-      loadOrders();
+    const orders = readOrders();
 
-    const order =
-      orders.find(
-        item =>
-          item.orderId ===
-          orderId
-      );
+    const order = orders.find(
+      item => item.id === orderId
+    );
 
     if (!order) {
 
@@ -1523,100 +1037,159 @@ bot.action(
       );
 
       return;
-
     }
 
-    order.status =
-      "completed";
+    order.status = "completed";
 
     order.completedAt =
       new Date().toISOString();
 
-    saveOrders(
-      orders
-    );
+    saveOrders(orders);
 
     await ctx.answerCbQuery(
       "Order completed."
     );
 
-    await ctx.editMessageText(
+    await ctx.editMessageReplyMarkup({
+      inline_keyboard: []
+    });
 
-      `✅ COMPLETED\n\nOrder: ${orderId}\nPackage: ${order.productName}\nUID: ${order.uid}`
+    await ctx.reply(
+`🎉 <b>ORDER COMPLETED</b>
 
+🧾 <b>Order ID:</b>
+<code>${escapeTelegramHtml(order.id)}</code>
+
+📦 <b>Package:</b>
+${escapeTelegramHtml(order.productName)}
+
+🎯 <b>UID:</b>
+<code>${escapeTelegramHtml(order.uid)}</code>
+
+💰 <b>Amount:</b>
+${order.price} ETB
+
+✅ <b>Status:</b> COMPLETED`,
+      {
+        parse_mode: "HTML"
+      }
     );
 
-  }
-);
-
-/* =========================
-   BOT ERROR HANDLER
-========================= */
-
-bot.catch(
-  error => {
+  } catch (error) {
 
     console.error(
-      "Telegram bot error:",
+      "❌ Complete button error:",
       error
     );
-
   }
+
+});
+
+/* =========================================================
+   TELEGRAM TEXT BUTTONS
+========================================================= */
+
+bot.hears("💎 Diamonds", ctx =>
+  ctx.reply(
+    "💎 Use /diamonds to view all diamond packages."
+  )
 );
 
-/* =========================
-   START BOT
-========================= */
+bot.hears("🎫 Membership", ctx =>
+  ctx.reply(
+    "🎫 Use /membership to view membership packages."
+  )
+);
+
+bot.hears("📈 Level Up", ctx =>
+  ctx.reply(
+    "📈 Use /levelup to view Level Up packages."
+  )
+);
+
+bot.hears("🎟️ Booyah Pass", ctx =>
+  ctx.reply(
+    "🎟️ Use /booyah to view the Booyah Pass."
+  )
+);
+
+bot.hears("📦 My Orders", ctx =>
+  ctx.reply(
+    "📦 Use /orders to view your orders."
+  )
+);
+
+bot.hears("💰 Payment", ctx =>
+  ctx.reply(
+`💰 Telebirr
+
+👤 Abebaw Adamu
+☎️ 0978454451
+
+Use the DAGITOPUP Mini App to submit your order and payment reference.`
+  )
+);
+
+bot.hears("👨‍💼 Support", ctx =>
+  ctx.reply(
+`👨‍💼 DAGITOPUP SUPPORT
+
+Send your Order ID and explain the problem.`
+  )
+);
+
+/* =========================================================
+   ERROR HANDLER
+========================================================= */
+
+bot.catch(error => {
+
+  console.error(
+    "❌ Telegram bot error:",
+    error
+  );
+
+});
+
+/* =========================================================
+   START TELEGRAM BOT
+========================================================= */
 
 bot.launch()
   .then(() => {
-
-    console.log(
-      "🔥 DAGITOPUP Telegram bot started."
-    );
-
+    console.log("🤖 DAGITOPUP Telegram bot started.");
   })
   .catch(error => {
-
     console.error(
       "❌ Telegram bot failed to start:",
       error
     );
-
   });
 
-/* =========================
+/* =========================================================
    START SERVER
-========================= */
+========================================================= */
 
-app.listen(
+app.listen(PORT, () => {
 
-  PORT,
+  console.log(
+    `🚀 DAGITOPUP server running on port ${PORT}`
+  );
 
-  "0.0.0.0",
+});
 
-  () => {
-
-    console.log(
-      `🚀 DAGITOPUP server running on port ${PORT}`
-    );
-
-  }
-
-);
-
-/* =========================
+/* =========================================================
    GRACEFUL SHUTDOWN
-========================= */
+========================================================= */
 
-process.once(
-  "SIGINT",
-  () =>
-    bot.stop("SIGINT")
-);
+process.once("SIGINT", () => {
 
-process.once(
-  "SIGTERM",
-  () =>
-    bot.stop("SIGTERM")
-);
+  bot.stop("SIGINT");
+
+});
+
+process.once("SIGTERM", () => {
+
+  bot.stop("SIGTERM");
+
+});
