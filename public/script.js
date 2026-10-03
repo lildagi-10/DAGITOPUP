@@ -1,6 +1,5 @@
 /* =========================================================
    DAGITOPUP - MINI APP SCRIPT
-   UID submission without automatic nickname lookup
 ========================================================= */
 
 const tg = window.Telegram?.WebApp;
@@ -119,23 +118,21 @@ const SERVICE_NAMES = {
 };
 
 /* =========================================================
-   STATE
+   ORDER STATE
 ========================================================= */
 
 let selectedService = null;
 let selectedProduct = null;
 
-/*
-  IMPORTANT:
-  There is intentionally NO verifiedPlayer variable.
-  We are no longer using automatic nickname lookup.
-*/
-
 /* =========================================================
-   DOM HELPERS
+   HELPER
 ========================================================= */
 
 const $ = id => document.getElementById(id);
+
+/* =========================================================
+   SHOW SCREEN
+========================================================= */
 
 function showScreen(screenId) {
 
@@ -158,7 +155,7 @@ function showScreen(screenId) {
 }
 
 /* =========================================================
-   START BUTTON
+   START
 ========================================================= */
 
 $("startBtn")?.addEventListener("click", () => {
@@ -168,7 +165,7 @@ $("startBtn")?.addEventListener("click", () => {
 });
 
 /* =========================================================
-   BACK TO HOME
+   BACK HOME
 ========================================================= */
 
 $("backHome")?.addEventListener("click", () => {
@@ -193,7 +190,11 @@ document
         card.dataset.service;
 
       if (!PRODUCTS[service]) {
-        showError("Invalid service selected.");
+
+        showError(
+          "Invalid service selected."
+        );
+
         return;
       }
 
@@ -229,19 +230,24 @@ function renderPackages() {
   packageList.innerHTML = "";
 
   if (packageTitle) {
+
     packageTitle.textContent =
       SERVICE_NAMES[selectedService];
+
   }
 
   if (packageBadge) {
+
     packageBadge.textContent =
       selectedService.toUpperCase();
+
   }
 
   if (packageSubtitle) {
 
     packageSubtitle.textContent =
       "Choose your package";
+
   }
 
   products.forEach(product => {
@@ -250,12 +256,21 @@ function renderPackages() {
       document.createElement("button");
 
     card.type = "button";
-    card.className = "package-card";
+
+    card.className =
+      "package-card";
 
     card.innerHTML = `
       <div class="package-card-info">
-        <strong>${escapeHtml(product.name)}</strong>
-        <span>🇪🇹 Ethiopian Birr</span>
+
+        <strong>
+          ${escapeHtml(product.name)}
+        </strong>
+
+        <span>
+          🇪🇹 Ethiopian Birr
+        </span>
+
       </div>
 
       <div class="package-price">
@@ -276,6 +291,7 @@ function renderPackages() {
     packageList.appendChild(card);
 
   });
+
 }
 
 /* =========================================================
@@ -291,7 +307,7 @@ $("backService")?.addEventListener("click", () => {
 });
 
 /* =========================================================
-   UPDATE UID SCREEN
+   UID SCREEN
 ========================================================= */
 
 function updateUIDScreen() {
@@ -299,13 +315,17 @@ function updateUIDScreen() {
   const selectedSummary =
     $("selectedSummary");
 
-  if (!selectedSummary || !selectedProduct) {
+  if (!selectedSummary ||
+      !selectedProduct) {
+
     return;
   }
 
   selectedSummary.innerHTML = `
+
     <div class="summary-row">
       <span>Service</span>
+
       <strong>
         ${escapeHtml(
           SERVICE_NAMES[selectedService]
@@ -315,22 +335,29 @@ function updateUIDScreen() {
 
     <div class="summary-row">
       <span>Package</span>
+
       <strong>
-        ${escapeHtml(selectedProduct.name)}
+        ${escapeHtml(
+          selectedProduct.name
+        )}
       </strong>
     </div>
 
     <div class="summary-row">
       <span>Price</span>
+
       <strong>
-        ${formatPrice(selectedProduct.price)} ETB
+        ${formatPrice(
+          selectedProduct.price
+        )} ETB
       </strong>
     </div>
+
   `;
 
   /*
-    The old nickname field is no longer used.
-    We prevent customers from entering a fake nickname.
+    Prevent customer from entering
+    their own nickname.
   */
 
   const nicknameInput =
@@ -343,9 +370,10 @@ function updateUIDScreen() {
     nicknameInput.readOnly = true;
 
     nicknameInput.placeholder =
-      "Account name will be manually verified";
+      "Account name verified manually";
 
-    nicknameInput.style.display = "none";
+    nicknameInput.style.display =
+      "none";
   }
 
 }
@@ -354,26 +382,31 @@ function updateUIDScreen() {
    BACK TO PACKAGE
 ========================================================= */
 
-$("backPackage")?.addEventListener("click", () => {
+$("backPackage")?.addEventListener(
+  "click",
+  () => {
 
-  showScreen("packageScreen");
+    showScreen("packageScreen");
 
-});
+  }
+);
 
 /* =========================================================
    UID INPUT
 ========================================================= */
 
-$("uid")?.addEventListener("input", event => {
+$("uid")?.addEventListener(
+  "input",
+  event => {
 
-  /*
-    Keep numbers only.
-  */
+    event.target.value =
+      event.target.value.replace(
+        /\D/g,
+        ""
+      );
 
-  event.target.value =
-    event.target.value.replace(/\D/g, "");
-
-});
+  }
+);
 
 /* =========================================================
    CONTINUE TO PAYMENT
@@ -393,12 +426,9 @@ $("continuePayment")?.addEventListener(
     }
 
     const uid =
-      String($("uid")?.value || "")
-        .trim();
-
-    /*
-      Free Fire UID validation
-    */
+      String(
+        $("uid")?.value || ""
+      ).trim();
 
     if (!/^\d{5,14}$/.test(uid)) {
 
@@ -412,8 +442,8 @@ $("continuePayment")?.addEventListener(
     }
 
     /*
-      No nickname lookup anymore.
-      We go directly to payment.
+      No API lookup.
+      Go directly to payment.
     */
 
     updatePaymentScreen(uid);
@@ -424,7 +454,7 @@ $("continuePayment")?.addEventListener(
 );
 
 /* =========================================================
-   UPDATE PAYMENT SCREEN
+   PAYMENT SCREEN
 ========================================================= */
 
 function updatePaymentScreen(uid) {
@@ -432,13 +462,17 @@ function updatePaymentScreen(uid) {
   const paymentSummary =
     $("paymentSummary");
 
-  if (!paymentSummary || !selectedProduct) {
+  if (!paymentSummary ||
+      !selectedProduct) {
+
     return;
   }
 
   paymentSummary.innerHTML = `
+
     <div class="summary-row">
       <span>Service</span>
+
       <strong>
         ${escapeHtml(
           SERVICE_NAMES[selectedService]
@@ -448,20 +482,27 @@ function updatePaymentScreen(uid) {
 
     <div class="summary-row">
       <span>Package</span>
+
       <strong>
-        ${escapeHtml(selectedProduct.name)}
+        ${escapeHtml(
+          selectedProduct.name
+        )}
       </strong>
     </div>
 
     <div class="summary-row">
       <span>Price</span>
+
       <strong>
-        ${formatPrice(selectedProduct.price)} ETB
+        ${formatPrice(
+          selectedProduct.price
+        )} ETB
       </strong>
     </div>
 
     <div class="summary-row">
       <span>Free Fire UID</span>
+
       <strong>
         ${escapeHtml(uid)}
       </strong>
@@ -469,17 +510,22 @@ function updatePaymentScreen(uid) {
 
     <div class="summary-row">
       <span>Account Name</span>
+
       <strong>
         Not verified
       </strong>
     </div>
 
     <div class="payment-note">
-      ⚠️ Your Free Fire UID will be manually
-      verified by DAGITOPUP before fulfillment.
+
+      ⚠️ Your Free Fire UID will be
+      manually verified by DAGITOPUP
+      before fulfillment.
+
     </div>
 
     <div class="payment-details">
+
       <div>
         <span>📱 Payment</span>
         <strong>Telebirr</strong>
@@ -494,7 +540,9 @@ function updatePaymentScreen(uid) {
         <span>☎️ Telebirr Number</span>
         <strong>0978454451</strong>
       </div>
+
     </div>
+
   `;
 
 }
@@ -503,11 +551,14 @@ function updatePaymentScreen(uid) {
    BACK TO UID
 ========================================================= */
 
-$("backUid")?.addEventListener("click", () => {
+$("backUid")?.addEventListener(
+  "click",
+  () => {
 
-  showScreen("uidScreen");
+    showScreen("uidScreen");
 
-});
+  }
+);
 
 /* =========================================================
    PAYMENT REFERENCE
@@ -542,17 +593,14 @@ $("submitOrder")?.addEventListener(
     }
 
     const uid =
-      String($("uid")?.value || "")
-        .trim();
+      String(
+        $("uid")?.value || ""
+      ).trim();
 
     const paymentRef =
       String(
         $("paymentRef")?.value || ""
       ).trim();
-
-    /*
-      Validate UID
-    */
 
     if (!/^\d{5,14}$/.test(uid)) {
 
@@ -565,10 +613,6 @@ $("submitOrder")?.addEventListener(
       return;
     }
 
-    /*
-      Validate payment reference
-    */
-
     if (!paymentRef) {
 
       showError(
@@ -579,10 +623,6 @@ $("submitOrder")?.addEventListener(
 
       return;
     }
-
-    /*
-      Prevent double submission
-    */
 
     const submitButton =
       $("submitOrder");
@@ -596,12 +636,14 @@ $("submitOrder")?.addEventListener(
 
       submitButton.textContent =
         "Submitting Order...";
+
     }
 
     try {
 
       const telegramUser =
-        tg?.initDataUnsafe?.user || null;
+        tg?.initDataUnsafe?.user ||
+        null;
 
       const telegramId =
         telegramUser?.id ||
@@ -613,44 +655,54 @@ $("submitOrder")?.addEventListener(
 
       const orderData = {
 
-        telegramId: String(telegramId),
+        telegramId:
+          String(telegramId),
 
-        username: String(username),
+        username:
+          String(username),
 
-        service: selectedService,
+        service:
+          selectedService,
 
-        productId: selectedProduct.id,
+        productId:
+          selectedProduct.id,
 
-        productName: selectedProduct.name,
+        productName:
+          selectedProduct.name,
 
-        price: selectedProduct.price,
+        price:
+          selectedProduct.price,
 
-        uid: uid,
+        uid:
+          uid,
 
-        /*
-          Nickname intentionally empty.
-          DAGITOPUP manually verifies it.
-        */
+        nickname:
+          "",
 
-        nickname: "",
+        paymentRef:
+          paymentRef
 
-        paymentRef: paymentRef
       };
 
       const response =
-        await fetch("/api/order", {
+        await fetch(
+          "/api/order",
+          {
 
-          method: "POST",
+            method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
 
-          body:
-            JSON.stringify(orderData)
+            body:
+              JSON.stringify(
+                orderData
+              )
 
-        });
+          }
+        );
 
       const data =
         await response.json();
@@ -662,17 +714,16 @@ $("submitOrder")?.addEventListener(
           data.error ||
           "Could not submit order."
         );
-      }
 
-      /*
-        Show successful order
-      */
+      }
 
       showSuccess(
         data.order || data
       );
 
-      showScreen("successScreen");
+      showScreen(
+        "successScreen"
+      );
 
     } catch (error) {
 
@@ -683,18 +734,20 @@ $("submitOrder")?.addEventListener(
 
       showError(
         error.message ||
-        "Something went wrong. Please try again."
+        "Something went wrong."
       );
 
     } finally {
 
       if (submitButton) {
 
-        submitButton.disabled = false;
+        submitButton.disabled =
+          false;
 
         submitButton.textContent =
           submitButton.dataset.originalText ||
           "Submit Order";
+
       }
 
     }
@@ -716,19 +769,23 @@ function showSuccess(order) {
   }
 
   successDetails.innerHTML = `
+
     <div class="success-order">
 
       <div class="summary-row">
         <span>🧾 Order ID</span>
+
         <strong>
           ${escapeHtml(
-            order.id || "Pending"
+            order.id ||
+            "Pending"
           )}
         </strong>
       </div>
 
       <div class="summary-row">
         <span>📦 Package</span>
+
         <strong>
           ${escapeHtml(
             order.product ||
@@ -741,6 +798,7 @@ function showSuccess(order) {
 
       <div class="summary-row">
         <span>💰 Amount</span>
+
         <strong>
           ${formatPrice(
             order.price ||
@@ -752,6 +810,7 @@ function showSuccess(order) {
 
       <div class="summary-row">
         <span>🎯 Free Fire UID</span>
+
         <strong>
           ${escapeHtml(
             order.uid ||
@@ -763,6 +822,7 @@ function showSuccess(order) {
 
       <div class="summary-row">
         <span>🧑 Account Name</span>
+
         <strong>
           Not verified
         </strong>
@@ -770,6 +830,7 @@ function showSuccess(order) {
 
       <div class="summary-row">
         <span>📌 Status</span>
+
         <strong>
           ${escapeHtml(
             order.status ||
@@ -779,31 +840,49 @@ function showSuccess(order) {
       </div>
 
       <div class="success-note">
+
         ✅ Your order has been received.
 
         <br><br>
 
-        DAGITOPUP will verify your UID and
-        payment before manually fulfilling
-        the order.
+        DAGITOPUP will verify your UID
+        and payment before manually
+        fulfilling the order.
+
       </div>
 
     </div>
+
   `;
 
 }
 
 /* =========================================================
-   VIEW ORDERS
+   MY ORDERS - SUCCESS PAGE BUTTON
 ========================================================= */
 
 $("viewOrders")?.addEventListener(
   "click",
-  () => {
-
-    loadOrders();
+  async () => {
 
     showScreen("ordersScreen");
+
+    await loadOrders();
+
+  }
+);
+
+/* =========================================================
+   MY ORDERS - MAIN MENU BUTTON
+========================================================= */
+
+$("myOrders")?.addEventListener(
+  "click",
+  async () => {
+
+    showScreen("ordersScreen");
+
+    await loadOrders();
 
   }
 );
@@ -814,35 +893,66 @@ $("viewOrders")?.addEventListener(
 
 async function loadOrders() {
 
-  const ordersContainer =
+  const ordersScreen =
     $("ordersScreen");
 
-  if (!ordersContainer) {
+  if (!ordersScreen) {
+
+    console.error(
+      "Orders screen not found."
+    );
+
     return;
   }
 
-  const telegramUser =
-    tg?.initDataUnsafe?.user || null;
-
-  const telegramId =
-    telegramUser?.id ||
-    "web_user";
-
   /*
-    Find/create order output area.
+    Find existing output container.
   */
 
   let orderOutput =
     $("orderOutput");
 
+  /*
+    If index.html doesn't contain
+    orderOutput, create it.
+  */
+
   if (!orderOutput) {
-    return;
+
+    orderOutput =
+      document.createElement("div");
+
+    orderOutput.id =
+      "orderOutput";
+
+    orderOutput.style.width =
+      "100%";
+
+    orderOutput.style.marginTop =
+      "20px";
+
+    ordersScreen.appendChild(
+      orderOutput
+    );
+
   }
 
+  const telegramUser =
+    tg?.initDataUnsafe?.user ||
+    null;
+
+  const telegramId =
+    telegramUser?.id ||
+    "web_user";
+
   orderOutput.innerHTML = `
+
     <div class="loading">
+
       🔄 Loading your orders...
+
     </div>
+
   `;
 
   try {
@@ -864,6 +974,7 @@ async function loadOrders() {
         data.error ||
         "Could not load orders."
       );
+
     }
 
     const orders =
@@ -871,89 +982,132 @@ async function loadOrders() {
         ? data.orders
         : [];
 
+    /*
+      No orders
+    */
+
     if (orders.length === 0) {
 
       orderOutput.innerHTML = `
-        <div class="empty-orders">
-          📦
 
-          <h3>No orders yet</h3>
+        <div class="empty-orders">
+
+          <div
+            style="
+              font-size:48px;
+              margin-bottom:10px;
+            "
+          >
+            📦
+          </div>
+
+          <h3>
+            No orders yet
+          </h3>
 
           <p>
-            Your DAGITOPUP orders will
-            appear here.
+            Your DAGITOPUP orders
+            will appear here.
           </p>
+
         </div>
+
       `;
 
       return;
     }
 
+    /*
+      Display orders
+    */
+
     orderOutput.innerHTML =
       orders.map(order => {
 
+        const status =
+          String(
+            order.status ||
+            "pending"
+          ).toUpperCase();
+
         return `
+
           <div class="order-card">
 
             <div class="order-header">
+
               <strong>
-                ${escapeHtml(order.id)}
+                🧾
+                ${escapeHtml(
+                  order.id
+                )}
               </strong>
 
-              <span class="order-status">
+              <span
+                class="order-status"
+              >
                 ${escapeHtml(
-                  String(
-                    order.status ||
-                    "pending"
-                  ).toUpperCase()
+                  status
                 )}
               </span>
+
             </div>
 
             <div class="order-info">
 
               <p>
                 📦
-                ${escapeHtml(
-                  order.productName ||
-                  "Package"
-                )}
-              </p>
-
-              <p>
-                💰
-                ${formatPrice(
-                  order.price || 0
-                )} ETB
-              </p>
-
-              <p>
-                🎯 UID:
                 <strong>
                   ${escapeHtml(
-                    order.uid || ""
+                    order.productName ||
+                    "Package"
                   )}
                 </strong>
               </p>
 
               <p>
-                🧑 Account:
+                💰
+                ${formatPrice(
+                  order.price ||
+                  0
+                )}
+                ETB
+              </p>
+
+              <p>
+                🎯 Free Fire UID:
+
+                <strong>
+                  ${escapeHtml(
+                    order.uid ||
+                    ""
+                  )}
+                </strong>
+              </p>
+
+              <p>
+                🧑 Account Name:
+
                 <strong>
                   Not verified
                 </strong>
               </p>
 
               <p>
-                💳 Reference:
-                ${escapeHtml(
-                  order.paymentRef ||
-                  ""
-                )}
+                💳 Payment Reference:
+
+                <strong>
+                  ${escapeHtml(
+                    order.paymentRef ||
+                    ""
+                  )}
+                </strong>
               </p>
 
             </div>
 
           </div>
+
         `;
 
       }).join("");
@@ -966,13 +1120,17 @@ async function loadOrders() {
     );
 
     orderOutput.innerHTML = `
+
       <div class="error-box">
+
         ❌
         ${escapeHtml(
           error.message ||
           "Could not load orders."
         )}
+
       </div>
+
     `;
 
   }
@@ -989,20 +1147,24 @@ $("newOrder")?.addEventListener(
 
     resetOrder();
 
-    showScreen("serviceScreen");
+    showScreen(
+      "serviceScreen"
+    );
 
   }
 );
 
 /* =========================================================
-   BACK FROM SUCCESS
+   BACK FROM SUCCESS / ORDERS
 ========================================================= */
 
 $("backSuccess")?.addEventListener(
   "click",
   () => {
 
-    showScreen("welcomeScreen");
+    showScreen(
+      "welcomeScreen"
+    );
 
   }
 );
@@ -1014,6 +1176,7 @@ $("backSuccess")?.addEventListener(
 function resetOrder() {
 
   selectedService = null;
+
   selectedProduct = null;
 
   const uid =
@@ -1032,26 +1195,33 @@ function resetOrder() {
 
     nickname.readOnly = true;
 
+    nickname.style.display =
+      "none";
+
   }
 
   const paymentRef =
     $("paymentRef");
 
   if (paymentRef) {
+
     paymentRef.value = "";
+
   }
 
   const orderOutput =
     $("orderOutput");
 
   if (orderOutput) {
+
     orderOutput.innerHTML = "";
+
   }
 
 }
 
 /* =========================================================
-   ERROR MESSAGE
+   ERROR
 ========================================================= */
 
 function showError(message) {
@@ -1062,12 +1232,16 @@ function showError(message) {
   if (output) {
 
     output.innerHTML = `
+
       <div class="error-box">
-        ❌ ${escapeHtml(message)}
+
+        ❌
+        ${escapeHtml(message)}
+
       </div>
+
     `;
 
-    return;
   }
 
   if (tg?.showAlert) {
@@ -1077,18 +1251,25 @@ function showError(message) {
     return;
   }
 
-  alert(message);
+  if (!output) {
+
+    alert(message);
+
+  }
 
 }
 
 /* =========================================================
-   FORMAT PRICE
+   PRICE FORMAT
 ========================================================= */
 
 function formatPrice(price) {
 
-  return Number(price || 0)
-    .toLocaleString("en-US");
+  return Number(
+    price || 0
+  ).toLocaleString(
+    "en-US"
+  );
 
 }
 
@@ -1098,29 +1279,43 @@ function formatPrice(price) {
 
 function escapeHtml(value) {
 
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  return String(
+    value ?? ""
+  )
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 
 }
 
 /* =========================================================
-   INITIAL STATE
+   INITIALIZE
 ========================================================= */
 
 document.addEventListener(
   "DOMContentLoaded",
   () => {
 
-    showScreen("welcomeScreen");
-
-    /*
-      Hide the old nickname input if it still exists
-      in the HTML.
-    */
+    showScreen(
+      "welcomeScreen"
+    );
 
     const nickname =
       $("nickname");
@@ -1131,7 +1326,8 @@ document.addEventListener(
 
       nickname.readOnly = true;
 
-      nickname.style.display = "none";
+      nickname.style.display =
+        "none";
 
     }
 
