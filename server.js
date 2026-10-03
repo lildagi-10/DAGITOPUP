@@ -30,19 +30,25 @@ app.use(express.static(path.join(__dirname, "public")));
 ========================= */
 
 /*
-  Free Fire lookup.
+  Uses the Free Fire FWX community API.
 
-  We try the player-info endpoint first.
-  If that fails, we try the checkbanned endpoint.
+  /api/region?id=UID
 
-  These are unofficial/community APIs and
-  can change or become unavailable.
+  This endpoint discovers the player's region
+  and returns nickname + UID.
+
+  Example response:
+
+  {
+    "nickname": "PlayerName",
+    "region": "ME",
+    "account_uid": "123456789"
+  }
 */
 
 app.get("/api/player/:uid", async (req, res) => {
 
-  const uid =
-    String(req.params.uid || "").trim();
+  const uid = String(req.params.uid || "").trim();
 
   /* ---------- UID VALIDATION ---------- */
 
@@ -55,310 +61,175 @@ app.get("/api/player/:uid", async (req, res) => {
 
   }
 
-  console.log(
-    `🔍 Checking Free Fire UID: ${uid}`
-  );
-
-  /* =====================================================
-     METHOD 1
-     PLAYER INFO API
-  ===================================================== */
+  console.log(`🔍 Checking Free Fire UID: ${uid}`);
 
   try {
 
     const url =
-      `https://api2.nftoken.info/get?uid=${encodeURIComponent(uid)}&region_group=GLOBAL`;
+      `https://freefirefwx-beta.squareweb.app/api/region?id=${encodeURIComponent(uid)}`;
 
     console.log(
-      "🌐 Trying player-info API..."
+      "🌐 Calling Free Fire region lookup..."
     );
 
-    const response =
-      await fetch(
-        url,
-        {
-          method: "GET",
+    const response = await fetch(url, {
+      method: "GET",
 
-          headers: {
-            Accept:
-              "application/json",
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "DAGITOPUP/1.0"
+      },
 
-            "User-Agent":
-              "DAGITOPUP/1.0"
-          },
+      signal: AbortSignal.timeout(15000)
+    });
 
-          signal:
-            AbortSignal.timeout(15000)
-        }
-      );
-
-    const text =
-      await response.text();
+    const text = await response.text();
 
     console.log(
-      `Player-info HTTP: ${response.status}`
+      `Free Fire API HTTP: ${response.status}`
     );
 
     console.log(
-      "Player-info raw response:",
+      "Free Fire API response:",
       text.slice(0, 2000)
     );
 
-    if (response.ok) {
+    /* ---------- API ERROR ---------- */
 
-      let data;
+    if (!response.ok) {
 
-      try {
+      console.error(
+        `❌ Free Fire API returned HTTP ${response.status}`
+      );
 
-        data =
-          JSON.parse(text);
-
-      } catch (parseError) {
-
-        console.error(
-          "❌ Player-info returned invalid JSON."
-        );
-
-        data = null;
-      }
-
-      if (data) {
-
-        /*
-          Different versions of the API may
-          use slightly different field names.
-        */
-
-        const accountInfo =
-          data.AccountInfo ||
-          data.accountInfo ||
-          data.basicInfo ||
-          data.basicinfo ||
-          data.player ||
-          data;
-
-        const nickname =
-          accountInfo?.AccountName ||
-          accountInfo?.accountName ||
-          accountInfo?.nickname ||
-          accountInfo?.Nickname ||
-          data.nickname ||
-          data.PlayerNickname;
-
-        const playerRegion =
-          accountInfo?.AccountRegion ||
-          accountInfo?.accountRegion ||
-          accountInfo?.region ||
-          data.region ||
-          data.PlayerRegion;
-
-        const level =
-          accountInfo?.AccountLevel ??
-          accountInfo?.accountLevel ??
-          accountInfo?.level ??
-          data.level ??
-          data.PlayerLevel ??
-          null;
-
-        const playerId =
-          accountInfo?.accountId ||
-          accountInfo?.accountID ||
-          data.player_id ||
-          data.uid ||
-          uid;
-
-        const isBanned =
-          data.BanStatus?.isBanned ??
-          data.banStatus?.isBanned ??
-          data.is_banned ??
-          false;
-
-        if (nickname) {
-
-          console.log(
-            `✅ Player found: ${nickname}`
-          );
-
-          return res.json({
-
-            success: true,
-
-            uid:
-              String(playerId),
-
-            nickname:
-              String(nickname),
-
-            region:
-              String(
-                playerRegion ||
-                "Unknown"
-              ),
-
-            level,
-
-            isBanned:
-              Boolean(isBanned),
-
-            status:
-              isBanned
-                ? "BANNED"
-                : "NOT BANNED"
-
-          });
-
-        }
-
-      }
+      return res.status(502).json({
+        success: false,
+        error:
+          "Free Fire player lookup is temporarily unavailable."
+      });
 
     }
+
+    /* ---------- PARSE JSON ---------- */
+
+    let data;
+
+    try {
+
+      data = JSON.parse(text);
+
+    } catch (error) {
+
+      console.error(
+        "❌ Free Fire API returned invalid JSON."
+      );
+
+      return res.status(502).json({
+        success: false,
+        error:
+          "Free Fire lookup returned an invalid response."
+      });
+
+    }
+
+    console.log(
+      "Parsed Free Fire data:",
+      data
+    );
+
+    /* ---------- PLAYER DATA ---------- */
+
+    const nickname =
+      data.nickname ||
+      data.player_nickname ||
+      data.AccountName ||
+      data.accountName ||
+      "";
+
+    const region =
+      data.region ||
+      data.player_region ||
+      data.AccountRegion ||
+      "Unknown";
+
+    const playerId =
+      data.account_uid ||
+      data.accountId ||
+      data.player_id ||
+      uid;
+
+    /* ---------- PLAYER NOT FOUND ---------- */
+
+    if (!nickname) {
+
+      console.log(
+        `❌ Player not found for UID: ${uid}`
+      );
+
+      return res.status(404).json({
+        success: false,
+        error:
+          "Free Fire player not found. Please check the UID."
+      });
+
+    }
+
+    /* ---------- SUCCESS ---------- */
+
+    console.log(
+      `✅ Player found: ${nickname}`
+    );
+
+    console.log(
+      `🌍 Region: ${region}`
+    );
+
+    console.log(
+      `🆔 UID: ${playerId}`
+    );
+
+    return res.json({
+
+      success: true,
+
+      uid:
+        String(playerId),
+
+      nickname:
+        String(nickname),
+
+      region:
+        String(region),
+
+      level:
+        data.level ??
+        null,
+
+      isBanned:
+        false,
+
+      status:
+        "PLAYER FOUND"
+
+    });
 
   } catch (error) {
 
     console.error(
-      "⚠️ Player-info lookup failed:",
+      "❌ Free Fire lookup error:",
       error.message
     );
 
-  }
+    return res.status(502).json({
 
-  /* =====================================================
-     METHOD 2
-     CHECK BANNED API
-  ===================================================== */
+      success: false,
 
-  try {
+      error:
+        "Free Fire player lookup is temporarily unavailable. Please try again."
 
-    const url =
-      `https://api2.nftoken.info/checkbanned?id=${encodeURIComponent(uid)}`;
-
-    console.log(
-      "🌐 Trying checkbanned API..."
-    );
-
-    const response =
-      await fetch(
-        url,
-        {
-          method: "GET",
-
-          headers: {
-            Accept:
-              "application/json",
-
-            "User-Agent":
-              "DAGITOPUP/1.0"
-          },
-
-          signal:
-            AbortSignal.timeout(15000)
-        }
-      );
-
-    const text =
-      await response.text();
-
-    console.log(
-      `Checkbanned HTTP: ${response.status}`
-    );
-
-    console.log(
-      "Checkbanned raw response:",
-      text.slice(0, 2000)
-    );
-
-    if (response.ok) {
-
-      let data;
-
-      try {
-
-        data =
-          JSON.parse(text);
-
-      } catch (parseError) {
-
-        console.error(
-          "❌ Checkbanned returned invalid JSON."
-        );
-
-        data = null;
-      }
-
-      if (
-        data &&
-        data.nickname
-      ) {
-
-        console.log(
-          `✅ Player found: ${data.nickname}`
-        );
-
-        return res.json({
-
-          success: true,
-
-          uid:
-            String(
-              data.player_id ||
-              uid
-            ),
-
-          nickname:
-            String(
-              data.nickname
-            ),
-
-          region:
-            String(
-              data.region ||
-              "Unknown"
-            ),
-
-          level:
-            data.level ??
-            null,
-
-          isBanned:
-            Boolean(
-              data.is_banned
-            ),
-
-          status:
-            data.status ||
-            "UNKNOWN"
-
-        });
-
-      }
-
-    }
-
-  } catch (error) {
-
-    console.error(
-      "⚠️ Checkbanned lookup failed:",
-      error.message
-    );
+    });
 
   }
-
-  /* =====================================================
-     ALL LOOKUPS FAILED
-  ===================================================== */
-
-  console.error(
-    `❌ Could not find/verify UID ${uid}`
-  );
-
-  return res.status(502).json({
-
-    success: false,
-
-    error:
-      "Free Fire lookup service is currently unavailable. Please try again in a moment."
-
-  });
 
 });
 
